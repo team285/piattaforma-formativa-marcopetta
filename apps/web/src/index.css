@@ -1,0 +1,58 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --ink: #0b0b0d;
+    --ink-2: #141417;
+    --ink-3: #1d1d22;
+    --paper: #f5f3ed;
+    --paper-2: #ece8de;
+    --amber: #f2b744;
+    --amber-2: #d99a2b;
+    --amber-3: #8c6319;
+    --ember: #d63829;
+    --ember-2: #a82818;
+    --sand: #e8dfcc;
+    --smoke: #6d6d75;
+    --smoke-2: #9a9aa2;
+    --line: #d8d2c4;
+    --line-dark: #24242a;
+    --ok: #7bb07b;
+    --warn: #e04a3a;
+    --tip: #f2b744;
+  }
+
+  html,
+  body {
+    background: var(--ink);
+    color: var(--paper);
+    font-family: "Inter", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--amber);
+    color: var(--ink);
+  }
+}
+
+@layer components {
+  .font-editorial {
+    font-family: "Fraunces", "Big Shoulders Display", serif;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+    font-variation-settings: "SOFT" 100, "opsz" 96;
+    font-optical-sizing: auto;
+  }
+
+  .font-display-heavy {
+    font-family: "Big Shoulders Display", sans-serif;
+    font-weight: 800;
+    letter-spacing: 0;
+    line-height: 0.9;
+    text-transform: uppercase;
+  }
+}
