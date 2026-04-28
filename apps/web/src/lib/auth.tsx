@@ -28,35 +28,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const loadProfile = async (userId: string) => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id,email,full_name,initials,role,avatar_url,is_dev")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (error) {
-      console.error("loadProfile error:", error);
-      return null;
-    }
-
-    if (!data) {
-      // No profile yet → call ensure_profile RPC (lazy creation pattern)
-      const { error: rpcError } = await supabase.rpc("ensure_profile");
-      if (rpcError) {
-        console.error("ensure_profile RPC error:", rpcError);
-        return null;
-      }
-      // Re-fetch after RPC
-      const { data: created } = await supabase
+  const loadProfile = async (userId: string): Promise<Profile | null> => {
+    // Fetch profile, resilient se la colonna `is_dev` non esiste ancora
+    // (es. migration 0018 non ancora applicata sul DB).
+    const fetchProfileRow = async (): Promise<{ data: unknown; error: unknown }> => {
+      const withDev = await supabase
         .from("profiles")
         .select("id,email,full_name,initials,role,avatar_url,is_dev")
         .eq("id", userId)
         .maybeSingle();
-      return created as Profile | null;
-    }
+      if (!withDev.error) return { data: withDev.data, error: null };
+      console.warn("[auth] is_dev not in schema yet, falling back:", withDev.error.message);
+      const noDev = await supabase
+        .from("profiles")
+        .select("id,email,full_name,initials,role,avatar_url")
+        .eq("id", userId)
+        .maybeSingle();
+      return { data: noDev.data, error: noDev.error };
+    };
 
-    return data as Profile;
+    const normalize = (raw: unknown): Profile | null => {
+      if (!raw || typeof raw !== "object") return null;
+      const d = raw as Record<string, unknown>;
+      return {
+        id: String(d.id ?? ""),
+        email: String(d.email ?? ""),
+        full_name: String(d.full_name ?? ""),
+        initials: String(d.initials ?? "??"),
+        role: (d.role as Profile["role"]) ?? "student",
+        avatar_url: (d.avatar_url as string | null) ?? null,
+        is_dev: !!d.is_dev,
+      };
+    };
+
+    const first = await fetchProfileRow();
+    if (first.error) {
+      console.error("[auth] loadProfile error:", first.error);
+      return null;
+    }
+    if (first.data) return normalize(first.data);
+
+    // No profile yet → call ensure_profile RPC (lazy creation pattern)
+    const { error: rpcError } = await supabase.rpc("ensure_profile");
+    if (rpcError) {
+      console.error("[auth] ensure_profile RPC error:", rpcError);
+      return null;
+    }
+    const second = await fetchProfileRow();
+    if (second.error || !second.data) return null;
+    return normalize(second.data);
   };
 
   const refreshProfile = async () => {
