@@ -18,13 +18,13 @@ interface NavItem {
 }
 
 const COACH_NAV: NavItem[] = [
-  { id: "dashboard", label: "Overview", icon: "home", to: "/coach/dashboard" },
-  { id: "students", label: "Studenti", icon: "grid", to: "/coach/studenti" },
-  { id: "team", label: "Team coach", icon: "users", to: "/coach/team" },
-  { id: "library", label: "Libreria", icon: "book", to: "/coach/libreria" },
-  { id: "review", label: "Da correggere", icon: "inbox", to: "/coach/review" },
-  { id: "chat", label: "Chat", icon: "chat", to: "/coach/chat" },
-  { id: "settings", label: "Impostazioni", icon: "settings", to: "/coach/impostazioni" },
+  { id: "dashboard", label: "Overview", icon: "home", to: "/preview/coach/dashboard" },
+  { id: "students", label: "Studenti", icon: "grid", to: "/preview/coach/studenti" },
+  { id: "team", label: "Team coach", icon: "users", to: "/preview/coach/team" },
+  { id: "library", label: "Libreria", icon: "book", to: "/preview/coach/libreria" },
+  { id: "review", label: "Da correggere", icon: "inbox", to: "/preview/coach/review" },
+  { id: "chat", label: "Chat", icon: "chat", to: "/preview/coach/chat" },
+  { id: "settings", label: "Impostazioni", icon: "settings", to: "/preview/coach/impostazioni" },
 ];
 
 export function CoachSidebar() {
