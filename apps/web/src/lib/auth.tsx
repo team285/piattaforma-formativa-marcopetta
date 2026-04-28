@@ -9,6 +9,7 @@ interface Profile {
   initials: string;
   role: "student" | "coach" | "founder";
   avatar_url: string | null;
+  is_dev: boolean;
 }
 
 interface AuthContextValue {
@@ -30,7 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id,email,full_name,initials,role,avatar_url")
+      .select("id,email,full_name,initials,role,avatar_url,is_dev")
       .eq("id", userId)
       .maybeSingle();
 
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Re-fetch after RPC
       const { data: created } = await supabase
         .from("profiles")
-        .select("id,email,full_name,initials,role,avatar_url")
+        .select("id,email,full_name,initials,role,avatar_url,is_dev")
         .eq("id", userId)
         .maybeSingle();
       return created as Profile | null;

@@ -86,9 +86,35 @@ function Sidebar({ route, onRoute }) {
   );
 }
 
+// Legge query string ?persona=...&device=...&dev=1
+// Quando il prototipo è embedded in MPCoach App via iframe, l'app esterna
+// passa il ruolo dell'utente loggato + il device viewport detection.
+// Se i parametri sono presenti, sovrascrivono il localStorage.
+function readQueryString() {
+  if (typeof window === "undefined") return {};
+  try {
+    const u = new URL(window.location.href);
+    return {
+      persona: u.searchParams.get("persona"),  // "student" | "coach" | "collab"
+      device:  u.searchParams.get("device"),    // "mobile" | "desktop"
+      dev:     u.searchParams.get("dev") === "1",
+    };
+  } catch (_e) { return {}; }
+}
+
+const QS = readQueryString();
+const QS_HAS_OVERRIDE = !!(QS.persona || QS.device);
+const SHOW_VIEWSWITCH = QS.dev || !QS_HAS_OVERRIDE;
+
 function App() {
-  const [persona, setPersona] = React.useState(() => localStorage.getItem("mp_persona") || "student");
-  const [device, setDevice] = React.useState(() => localStorage.getItem("mp_device") || "mobile");
+  const [persona, setPersona] = React.useState(() => {
+    if (QS.persona === "student" || QS.persona === "coach" || QS.persona === "collab") return QS.persona;
+    return localStorage.getItem("mp_persona") || "student";
+  });
+  const [device, setDevice] = React.useState(() => {
+    if (QS.device === "mobile" || QS.device === "desktop") return QS.device;
+    return localStorage.getItem("mp_device") || "mobile";
+  });
 
   const [studentMobileRoute, setSMR] = React.useState(() => localStorage.getItem("mp_smr") || "home");
   const [studentDesktopRoute, setSDR] = React.useState(() => localStorage.getItem("mp_sdr") || "home");
@@ -149,7 +175,9 @@ function App() {
 
   return (
     <>
-      <ViewSwitch persona={persona} device={device} onChange={handleChange}/>
+      {SHOW_VIEWSWITCH && (
+        <ViewSwitch persona={persona} device={device} onChange={handleChange}/>
+      )}
       <div data-screen-label={label}>{content}</div>
       <window.MPToastHost/>
     </>

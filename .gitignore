@@ -50,3 +50,7 @@ supabase/.temp/
 # Misc
 .turbo/
 .cache/
+
+# Credenziali e segreti — MAI committare
+CREDENZIALI.md
+*.credentials.md

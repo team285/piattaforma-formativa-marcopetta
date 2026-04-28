@@ -1,20 +1,55 @@
 import { useAuth } from "../lib/auth";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /**
  * Home — l'intero prototipo MPCoach servito come iframe full-screen.
  *
- * Strategia di porting:
- * - Il prototipo (21 schermate JSX, ViewSwitch, dati mock) è copiato in
- *   public/prototype/ e servito statico da Vercel.
- * - Il login Supabase è la cornice esterna: per vedere il prototipo
- *   bisogna essere autenticati.
- * - Sessioni successive: porteremo gradualmente le pagine in TSX nativo
- *   collegate al DB Supabase, sostituendo pezzi dell'iframe.
+ * Routing automatico:
+ *  - role=`student` → persona="student", ViewSwitch nascosto
+ *  - role=`coach`   → persona="coach",   ViewSwitch nascosto
+ *  - role=`founder` → persona="coach",   ViewSwitch nascosto (vede vista Marco)
+ *  - is_dev=true    → ViewSwitch visibile (override per testing)
+ *
+ * Device auto-detect: < 768px = mobile, altrimenti desktop. Viene aggiornato
+ * al resize in tempo reale (utile per chi ridimensiona finestra).
  */
+
+function detectDevice(): "mobile" | "desktop" {
+  if (typeof window === "undefined") return "desktop";
+  return window.innerWidth < 768 ? "mobile" : "desktop";
+}
+
 export default function Home() {
   const { profile, signOut } = useAuth();
   const [headerOpen, setHeaderOpen] = useState(true);
+  const [device, setDevice] = useState<"mobile" | "desktop">(detectDevice);
+
+  // Aggiorna device al resize (es. utente ridimensiona finestra desktop)
+  useEffect(() => {
+    const onResize = () => setDevice(detectDevice());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // Persona derivata da role: founder e coach vedono entrambi la vista coach.
+  // Student vede student. Collab è solo per uso futuro (Paolo ha role=coach).
+  const persona = useMemo<"student" | "coach" | "collab">(() => {
+    if (!profile) return "student";
+    if (profile.role === "student") return "student";
+    return "coach"; // founder e coach vedono la stessa interfaccia
+  }, [profile]);
+
+  // Dev mode: solo Luca (is_dev=true) vede ViewSwitch per testare le 6 viste
+  const dev = profile?.is_dev ?? false;
+
+  // Ricostruisce src dell'iframe quando persona/device/dev cambiano
+  const iframeSrc = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("persona", persona);
+    params.set("device", device);
+    if (dev) params.set("dev", "1");
+    return `/prototype/index.html?${params.toString()}`;
+  }, [persona, device, dev]);
 
   if (!profile) {
     return (
@@ -23,6 +58,13 @@ export default function Home() {
       </div>
     );
   }
+
+  const roleLabel =
+    profile.role === "founder"
+      ? "Fondatore"
+      : profile.role === "coach"
+        ? "Coach"
+        : "Studente";
 
   return (
     <div style={{ position: "fixed", inset: 0, background: "#0B0B0D" }}>
@@ -57,7 +99,23 @@ export default function Home() {
             <span style={{ color: "#F2B744", fontWeight: 600 }}>MPCoach</span>
             <span style={{ color: "#6D6D75" }}>·</span>
             <span style={{ color: "#9A9AA2" }}>
-              {profile.full_name} · {profile.role}
+              {profile.full_name} · {roleLabel}
+              {dev && (
+                <span
+                  style={{
+                    marginLeft: 8,
+                    padding: "2px 6px",
+                    background: "rgba(242,183,68,0.18)",
+                    border: "1px solid rgba(242,183,68,0.5)",
+                    color: "#F2B744",
+                    borderRadius: 2,
+                    fontSize: 9,
+                    letterSpacing: "0.15em",
+                  }}
+                >
+                  dev
+                </span>
+              )}
             </span>
             <span style={{ flex: 1 }} />
             <button
@@ -124,7 +182,7 @@ export default function Home() {
 
       {/* Iframe del prototipo full-screen */}
       <iframe
-        src="/prototype/index.html"
+        src={iframeSrc}
         title="MPCoach — applicazione"
         style={{
           position: "absolute",
