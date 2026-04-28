@@ -1,5 +1,6 @@
 import { useAuth } from "../lib/auth";
 import { useEffect, useMemo, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 /**
  * Home — l'intero prototipo MPCoach servito come iframe full-screen.
@@ -20,9 +21,10 @@ function detectDevice(): "mobile" | "desktop" {
 }
 
 export default function Home() {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, refreshProfile } = useAuth();
   const [headerOpen, setHeaderOpen] = useState(true);
   const [device, setDevice] = useState<"mobile" | "desktop">(detectDevice);
+  const [profileTimeout, setProfileTimeout] = useState(false);
 
   // Aggiorna device al resize (es. utente ridimensiona finestra desktop)
   useEffect(() => {
@@ -30,6 +32,16 @@ export default function Home() {
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
+
+  // Se profile non si carica entro 4s, mostra fallback con retry/logout
+  useEffect(() => {
+    if (profile) {
+      setProfileTimeout(false);
+      return;
+    }
+    const t = setTimeout(() => setProfileTimeout(true), 4000);
+    return () => clearTimeout(t);
+  }, [profile]);
 
   // Persona derivata da role: founder e coach vedono entrambi la vista coach.
   // Student vede student. Collab è solo per uso futuro (Paolo ha role=coach).
@@ -52,9 +64,49 @@ export default function Home() {
   }, [persona, device, dev]);
 
   if (!profile) {
+    if (!profileTimeout) {
+      return (
+        <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
+          <div className="text-smoke-2 font-mono text-sm">Caricamento profilo…</div>
+        </div>
+      );
+    }
+    // Timeout 4s — mostriamo fallback con retry e logout
     return (
-      <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
-        <div className="text-smoke-2 font-mono text-sm">Caricamento profilo…</div>
+      <div className="min-h-screen bg-ink text-paper flex items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)] mb-3">
+            Errore caricamento profilo
+          </div>
+          <h1 className="font-editorial text-[32px] mb-4 leading-tight">
+            Non riesco a caricare i tuoi dati.
+          </h1>
+          <p className="text-smoke-2 text-sm mb-6 leading-relaxed">
+            Possibili cause: la migration database <code>0018</code> non è stata applicata, o c'è
+            un problema di connessione. Riprova, oppure esci e rifai login.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={async () => {
+                setProfileTimeout(false);
+                await refreshProfile();
+              }}
+              className="h-10 px-4 rounded-[2px] bg-[var(--amber)] text-ink font-display tracking-wider text-[13px] uppercase hover:bg-[var(--amber-2)] transition"
+              style={{ fontWeight: 700 }}
+            >
+              Riprova
+            </button>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/login";
+              }}
+              className="h-10 px-4 rounded-[2px] border border-line-dark text-smoke-2 hover:text-paper font-mono text-[12px] uppercase tracking-wider"
+            >
+              Esci
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
