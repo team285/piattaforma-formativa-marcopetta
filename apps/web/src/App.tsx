@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import Home from "./pages/Home";
+import Preview from "./pages/Preview";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -54,6 +55,14 @@ export default function App() {
             }
           />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route
+            path="/preview/*"
+            element={
+              <RequireAuth>
+                <Preview />
+              </RequireAuth>
+            }
+          />
           <Route
             path="/"
             element={

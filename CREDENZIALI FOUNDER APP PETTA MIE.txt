@@ -1,0 +1,4 @@
+Email:    lucagiampaoletti3@gmail.com
+Password: MpFounder.LucaG-2026!
+URL:      https://piattaforma-formativa-marcopetta-we.vercel.app
+Ruolo:    founder (con flag is_dev per ViewSwitch)

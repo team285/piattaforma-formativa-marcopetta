@@ -118,6 +118,26 @@ export default function Home() {
               )}
             </span>
             <span style={{ flex: 1 }} />
+            {dev && (
+              <a
+                href="/preview/coach/dashboard"
+                style={{
+                  background: "rgba(242,183,68,0.18)",
+                  border: "1px solid rgba(242,183,68,0.5)",
+                  color: "#F2B744",
+                  padding: "4px 10px",
+                  borderRadius: 2,
+                  fontSize: 10,
+                  fontFamily: "inherit",
+                  letterSpacing: "0.18em",
+                  textTransform: "uppercase",
+                  textDecoration: "none",
+                }}
+                title="Anteprima vista nativa TSX (in sviluppo)"
+              >
+                anteprima nativa →
+              </a>
+            )}
             <button
               onClick={() => setHeaderOpen(false)}
               style={{
