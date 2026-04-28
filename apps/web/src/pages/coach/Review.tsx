@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
+import { supabase, withTimeout } from "../../lib/supabase";
 import { Avatar, EditorialH, Icon, Tag, Thumb } from "../../components/ui";
 
 interface QueueItem {
@@ -38,17 +38,15 @@ export function CoachReview() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      try {
-        const { data } = await supabase
-          .from("review_queue")
-          .select("*")
-          .order("submitted_at", { ascending: true });
-        if (!cancelled) setQueue((data as QueueItem[]) ?? []);
-      } catch (e) {
-        console.error("[Review] load:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      const res = await withTimeout(
+        supabase.from("review_queue").select("*").order("submitted_at", { ascending: true }),
+        6000,
+        { data: [] as QueueItem[], error: null },
+        "review.queue"
+      );
+      if (cancelled) return;
+      setQueue(((res.data as QueueItem[]) ?? []));
+      setLoading(false);
     };
     load();
     return () => {

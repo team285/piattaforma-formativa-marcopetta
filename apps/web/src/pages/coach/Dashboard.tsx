@@ -16,7 +16,7 @@
 
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
+import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Avatar, EditorialH, Icon, StatCard, Tag, Thumb } from "../../components/ui";
 
@@ -67,57 +67,70 @@ export function CoachDashboard() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      try {
-        // KPI: count students totali (founder vede tutti, coach solo i propri via RLS)
-        const { count: studentsTotal } = await supabase
-          .from("students")
-          .select("*", { count: "exact", head: true });
+      const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const today = new Date().toISOString().slice(0, 10);
+      const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
-        // Active = quelli con last_active_at negli ultimi 7 giorni
-        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-        const { count: activeStudents } = await supabase
-          .from("students")
-          .select("*", { count: "exact", head: true })
-          .gte("last_active_at", sevenDaysAgo);
+      // Lanciamo tutte le KPI in parallelo, ognuna con il proprio timeout
+      const [studentsTotalRes, activeRes, queueRes, unreadRes, expiringRes] = await Promise.all([
+        withTimeout(
+          supabase.from("students").select("*", { count: "exact", head: true }),
+          5000,
+          { count: 0, error: null } as { count: number | null; error: null },
+          "dash.studentsTotal"
+        ),
+        withTimeout(
+          supabase
+            .from("students")
+            .select("*", { count: "exact", head: true })
+            .gte("last_active_at", sevenDaysAgo),
+          5000,
+          { count: 0, error: null } as { count: number | null; error: null },
+          "dash.active"
+        ),
+        withTimeout(
+          supabase
+            .from("review_queue")
+            .select("*", { count: "exact" })
+            .order("submitted_at", { ascending: true })
+            .limit(20),
+          5000,
+          { data: [] as QueueItem[], count: 0, error: null } as { data: QueueItem[]; count: number | null; error: null },
+          "dash.queue"
+        ),
+        withTimeout(
+          supabase
+            .from("chat_messages")
+            .select("*", { count: "exact", head: true })
+            .is("read_at", null)
+            .neq("sender_id", profile?.id ?? ""),
+          5000,
+          { count: 0, error: null } as { count: number | null; error: null },
+          "dash.unread"
+        ),
+        withTimeout(
+          supabase
+            .from("students")
+            .select("*", { count: "exact", head: true })
+            .gte("path_end_date", today)
+            .lte("path_end_date", in30),
+          5000,
+          { count: 0, error: null } as { count: number | null; error: null },
+          "dash.expiring"
+        ),
+      ]);
 
-        // Coda video: tutta la review_queue visibile a questo utente (RLS gestisce filtering)
-        const { data: queueData, count: toReview } = await supabase
-          .from("review_queue")
-          .select("*", { count: "exact" })
-          .order("submitted_at", { ascending: true })
-          .limit(20);
+      if (cancelled) return;
 
-        // Messaggi non letti: count chat_messages dove read_at è null e sender != me
-        const { count: unreadMsgs } = await supabase
-          .from("chat_messages")
-          .select("*", { count: "exact", head: true })
-          .is("read_at", null)
-          .neq("sender_id", profile?.id ?? "");
-
-        // Percorsi in scadenza: students con path_end_date entro 30 giorni
-        const in30 = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        const today = new Date().toISOString().slice(0, 10);
-        const { count: expiringMonth } = await supabase
-          .from("students")
-          .select("*", { count: "exact", head: true })
-          .gte("path_end_date", today)
-          .lte("path_end_date", in30);
-
-        if (cancelled) return;
-
-        setKpi({
-          activeStudents: activeStudents ?? 0,
-          studentsTotal: studentsTotal ?? 0,
-          toReview: toReview ?? 0,
-          unreadMsgs: unreadMsgs ?? 0,
-          expiringMonth: expiringMonth ?? 0,
-        });
-        setQueue((queueData as QueueItem[]) ?? []);
-      } catch (e) {
-        console.error("[Dashboard] load error:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      setKpi({
+        studentsTotal: studentsTotalRes.count ?? 0,
+        activeStudents: activeRes.count ?? 0,
+        toReview: queueRes.count ?? 0,
+        unreadMsgs: unreadRes.count ?? 0,
+        expiringMonth: expiringRes.count ?? 0,
+      });
+      setQueue(((queueRes.data as QueueItem[]) ?? []));
+      setLoading(false);
     };
     load();
     return () => {

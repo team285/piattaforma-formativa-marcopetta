@@ -3,7 +3,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, withTimeout } from "../../lib/supabase";
 import { EditorialH, EmberButton, Icon, Tag, Thumb, toast } from "../../components/ui";
 
 interface Lesson {
@@ -39,49 +39,58 @@ export function CoachLibreria() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      try {
-        const { data: cats } = await supabase
-          .from("library_categories")
-          .select("id,title,position")
-          .order("position");
-        if (cancelled) return;
+      const [catsRes, modsRes, lessonsRes] = await Promise.all([
+        withTimeout(
+          supabase.from("library_categories").select("id,title,position").order("position"),
+          6000,
+          { data: [] as Array<{ id: string; title: string; position: number }>, error: null },
+          "lib.cats"
+        ),
+        withTimeout(
+          supabase
+            .from("library_modules")
+            .select("id,title,position,category_id")
+            .order("position"),
+          6000,
+          { data: [] as Array<{ id: string; title: string; position: number; category_id: string }>, error: null },
+          "lib.mods"
+        ),
+        withTimeout(
+          supabase
+            .from("lessons")
+            .select("id,title,duration_seconds,views_count,module_id,status")
+            .eq("status", "published"),
+          6000,
+          { data: [] as Array<{ id: string; title: string; duration_seconds: number | null; views_count: number; module_id: string; status: string }>, error: null },
+          "lib.lessons"
+        ),
+      ]);
+      if (cancelled) return;
 
-        const { data: mods } = await supabase
-          .from("library_modules")
-          .select("id,title,position,category_id")
-          .order("position");
+      const cats = catsRes.data ?? [];
+      const mods = modsRes.data ?? [];
+      const lessons = lessonsRes.data ?? [];
 
-        const { data: lessons } = await supabase
-          .from("lessons")
-          .select("id,title,duration_seconds,views_count,module_id,status")
-          .eq("status", "published");
-
-        if (cancelled) return;
-
-        const cs = (cats ?? []).map((c) => ({
-          id: c.id as string,
-          title: c.title as string,
-          modules: ((mods ?? []) as Array<{ id: string; title: string; category_id: string }>)
-            .filter((m) => m.category_id === c.id)
-            .map((m) => ({
-              id: m.id,
-              title: m.title,
-              lessons: ((lessons ?? []) as Array<{ id: string; title: string; duration_seconds: number | null; views_count: number; module_id: string }>)
-                .filter((l) => l.module_id === m.id)
-                .map((l) => ({
-                  id: l.id,
-                  title: l.title,
-                  duration_seconds: l.duration_seconds,
-                  views_count: l.views_count,
-                })),
-            })),
-        }));
-        setTree(cs);
-      } catch (e) {
-        console.error("[Libreria] load:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      const cs = cats.map((c) => ({
+        id: c.id,
+        title: c.title,
+        modules: mods
+          .filter((m) => m.category_id === c.id)
+          .map((m) => ({
+            id: m.id,
+            title: m.title,
+            lessons: lessons
+              .filter((l) => l.module_id === m.id)
+              .map((l) => ({
+                id: l.id,
+                title: l.title,
+                duration_seconds: l.duration_seconds,
+                views_count: l.views_count,
+              })),
+          })),
+      }));
+      setTree(cs);
+      setLoading(false);
     };
     load();
     return () => {

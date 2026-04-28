@@ -1,12 +1,13 @@
 /**
  * Coach Team — porting nativo (coach_team.jsx) connesso al DB.
  *
- * Mostra grid dei coach del team (Marco fondatore + Paolo + altri futuri),
- * letta da tabella `coaches` JOIN profiles. Drill-down placeholder.
+ * Mostra grid dei coach del team. Strategia query: niente nested join,
+ * query separate + .in() + Map. withTimeout su tutto cosi' la UI non
+ * si blocca su "Caricamento…" infinito.
  */
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, withTimeout } from "../../lib/supabase";
 import { Avatar, EmberButton, Icon, Tag, toast } from "../../components/ui";
 
 interface CoachRow {
@@ -33,66 +34,88 @@ export function CoachTeam() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      try {
-        // Lista coach: JOIN coaches × profiles
-        const { data: coachesData, error } = await supabase
+      // 1. Lista coach (no join)
+      const coachesRes = await withTimeout(
+        supabase
           .from("coaches")
-          .select(
-            `
-            id,
-            job_title,
-            tagline,
-            bio,
-            tone,
-            specialties,
-            locked,
-            max_students,
-            avg_response_time,
-            feedback_this_week,
-            profile:profiles!inner(full_name,initials,role)
-          `
-          );
-        if (error) {
-          console.error("[Team] load error:", error);
-          if (!cancelled) setTeam([]);
-          return;
-        }
+          .select("id,job_title,tagline,bio,tone,specialties,locked,max_students,avg_response_time,feedback_this_week"),
+        6000,
+        {
+          data: [] as Array<{
+            id: string; job_title: string | null; tagline: string | null; bio: string | null;
+            tone: string | null; specialties: string[] | null; locked: boolean | null;
+            max_students: number | null; avg_response_time: string | null; feedback_this_week: number | null;
+          }>,
+          error: null,
+        },
+        "team.coaches"
+      );
+      if (cancelled) return;
+      const coachesRaw = coachesRes.data ?? [];
 
-        // Per ogni coach, count studenti assegnati attivamente
-        const rows: CoachRow[] = await Promise.all(
-          (coachesData ?? []).map(async (c) => {
-            const { count } = await supabase
-              .from("student_coach_assignments")
-              .select("*", { count: "exact", head: true })
-              .eq("coach_id", c.id as string)
-              .eq("status", "active");
-            const profile = (c as { profile: { full_name: string; initials: string; role: string } | { full_name: string; initials: string; role: string }[] }).profile;
-            const p = Array.isArray(profile) ? profile[0] : profile;
-            return {
-              id: c.id as string,
-              full_name: p?.full_name ?? "—",
-              initials: p?.initials ?? "??",
-              role: p?.role ?? "coach",
-              job_title: (c.job_title as string) ?? "Coach",
-              tagline: (c.tagline as string | null) ?? null,
-              bio: (c.bio as string | null) ?? null,
-              tone: (c.tone as "ink" | "ember" | "sand") ?? "ink",
-              specialties: (c.specialties as string[] | null) ?? [],
-              locked: !!c.locked,
-              max_students: (c.max_students as number) ?? 10,
-              avg_response_time: (c.avg_response_time as string | null) ?? null,
-              feedback_this_week: (c.feedback_this_week as number) ?? 0,
-              students_count: count ?? 0,
-            };
-          })
-        );
-
-        if (!cancelled) setTeam(rows);
-      } catch (e) {
-        console.error("[Team] exception:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (coachesRaw.length === 0) {
+        setTeam([]);
+        setLoading(false);
+        return;
       }
+
+      const coachIds = coachesRaw.map((c) => c.id);
+
+      // 2. Profiles dei coach
+      const profilesRes = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("id,full_name,initials,role")
+          .in("id", coachIds),
+        6000,
+        { data: [] as Array<{ id: string; full_name: string; initials: string; role: string }>, error: null },
+        "team.profiles"
+      );
+      if (cancelled) return;
+      const profileById = new Map<string, { full_name: string; initials: string; role: string }>();
+      (profilesRes.data ?? []).forEach((p) => {
+        profileById.set(p.id, { full_name: p.full_name, initials: p.initials, role: p.role });
+      });
+
+      // 3. Tutte le assignments attive (coach_id) → count via aggregazione client
+      const assignsRes = await withTimeout(
+        supabase
+          .from("student_coach_assignments")
+          .select("coach_id,status")
+          .in("coach_id", coachIds)
+          .eq("status", "active"),
+        6000,
+        { data: [] as Array<{ coach_id: string; status: string }>, error: null },
+        "team.assignments"
+      );
+      if (cancelled) return;
+      const countByCoach = new Map<string, number>();
+      (assignsRes.data ?? []).forEach((a) => {
+        countByCoach.set(a.coach_id, (countByCoach.get(a.coach_id) ?? 0) + 1);
+      });
+
+      const rows: CoachRow[] = coachesRaw.map((c) => {
+        const p = profileById.get(c.id);
+        return {
+          id: c.id,
+          full_name: p?.full_name ?? "—",
+          initials: p?.initials ?? "??",
+          role: p?.role ?? "coach",
+          job_title: c.job_title ?? "Coach",
+          tagline: c.tagline,
+          bio: c.bio,
+          tone: ((c.tone as "ink" | "ember" | "sand") ?? "ink"),
+          specialties: c.specialties ?? [],
+          locked: !!c.locked,
+          max_students: c.max_students ?? 10,
+          avg_response_time: c.avg_response_time,
+          feedback_this_week: c.feedback_this_week ?? 0,
+          students_count: countByCoach.get(c.id) ?? 0,
+        };
+      });
+
+      setTeam(rows);
+      setLoading(false);
     };
     load();
     return () => {
@@ -105,7 +128,6 @@ export function CoachTeam() {
   return (
     <div className="min-h-full bg-paper fade-in">
       <div className="max-w-[1280px] mx-auto px-10 py-10">
-        {/* Hero */}
         <div className="flex items-end justify-between pb-6 border-b border-line mb-8">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-2">
@@ -131,7 +153,6 @@ export function CoachTeam() {
           </EmberButton>
         </div>
 
-        {/* Empty state */}
         {!loading && team.length === 0 && (
           <div className="bg-paper-2 border border-line rounded-[3px] p-16 text-center">
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-3">
@@ -147,7 +168,6 @@ export function CoachTeam() {
           </div>
         )}
 
-        {/* Grid coach */}
         {team.length > 0 && (
           <div className="grid grid-cols-3 gap-4">
             {team.map((c) => {

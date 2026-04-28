@@ -4,7 +4,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, withTimeout } from "../../lib/supabase";
 import { Avatar, toast } from "../../components/ui";
 
 interface ThreadRow {
@@ -14,7 +14,6 @@ interface ThreadRow {
   student_initials: string;
   last_message_at: string | null;
   last_message_preview: string | null;
-  unread_count: number;
 }
 
 export function CoachChat() {
@@ -25,43 +24,59 @@ export function CoachChat() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      try {
-        const { data: threadsData } = await supabase
+      // 1. Lista chat_threads (no join — semplice)
+      const threadsRes = await withTimeout(
+        supabase
           .from("chat_threads")
-          .select(
-            `
-            id,
-            student_id,
-            last_message_at,
-            last_message_preview,
-            student:profiles!chat_threads_student_id_fkey(full_name,initials)
-          `
-          )
-          .order("last_message_at", { ascending: false, nullsFirst: false });
+          .select("id,student_id,last_message_at,last_message_preview")
+          .order("last_message_at", { ascending: false, nullsFirst: false }),
+        6000,
+        { data: [] as Array<{ id: string; student_id: string; last_message_at: string | null; last_message_preview: string | null }>, error: null },
+        "chat_threads.list"
+      );
 
-        if (cancelled) return;
+      if (cancelled) return;
+      const threadsRaw = threadsRes.data ?? [];
 
-        const rows: ThreadRow[] = (threadsData ?? []).map((t) => {
-          const studentProfile = (t as { student: { full_name: string; initials: string } | { full_name: string; initials: string }[] }).student;
-          const sp = Array.isArray(studentProfile) ? studentProfile[0] : studentProfile;
-          return {
-            id: t.id as string,
-            student_id: t.student_id as string,
-            student_name: sp?.full_name ?? "—",
-            student_initials: sp?.initials ?? "??",
-            last_message_at: (t.last_message_at as string | null) ?? null,
-            last_message_preview: (t.last_message_preview as string | null) ?? null,
-            unread_count: 0,
-          };
-        });
-
-        setThreads(rows);
-        if (rows.length > 0 && !activeId) setActiveId(rows[0].id);
-      } catch (e) {
-        console.error("[Chat] load:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (threadsRaw.length === 0) {
+        setThreads([]);
+        setLoading(false);
+        return;
       }
+
+      // 2. Per ogni thread, carica il profile dello studente con una query separata
+      const studentIds = threadsRaw.map((t) => t.student_id);
+      const profilesRes = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("id,full_name,initials")
+          .in("id", studentIds),
+        6000,
+        { data: [] as Array<{ id: string; full_name: string; initials: string }>, error: null },
+        "profiles.in"
+      );
+
+      if (cancelled) return;
+      const profileById = new Map<string, { full_name: string; initials: string }>();
+      (profilesRes.data ?? []).forEach((p) => {
+        profileById.set(p.id, { full_name: p.full_name, initials: p.initials });
+      });
+
+      const rows: ThreadRow[] = threadsRaw.map((t) => {
+        const p = profileById.get(t.student_id);
+        return {
+          id: t.id,
+          student_id: t.student_id,
+          student_name: p?.full_name ?? "—",
+          student_initials: p?.initials ?? "??",
+          last_message_at: t.last_message_at,
+          last_message_preview: t.last_message_preview,
+        };
+      });
+
+      setThreads(rows);
+      if (rows.length > 0 && !activeId) setActiveId(rows[0].id);
+      setLoading(false);
     };
     load();
     return () => {
@@ -101,7 +116,6 @@ export function CoachChat() {
 
   return (
     <div className="flex h-screen bg-paper">
-      {/* Inbox */}
       <div className="w-[340px] flex-shrink-0 bg-paper-2 border-r border-line flex flex-col">
         <div className="px-5 py-5 border-b border-line">
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-1.5">
@@ -136,7 +150,6 @@ export function CoachChat() {
         </div>
       </div>
 
-      {/* Thread */}
       <div className="flex-1 flex flex-col">
         {active ? (
           <>
@@ -156,8 +169,7 @@ export function CoachChat() {
                 </div>
                 <p className="text-smoke text-[14px] max-w-md">
                   Composer (con allegati video/audio) e cronologia messaggi realtime arrivano nella
-                  prossima sessione di porting. Per ora l'inbox è funzionante e i thread sono creati
-                  automaticamente quando uno studente viene assegnato a un coach.
+                  prossima sessione di porting.
                 </p>
               </div>
             </div>

@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Avatar, Icon, toast } from "../../components/ui";
 
@@ -52,54 +52,101 @@ export function CoachImpostazioni() {
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      try {
-        const { data: coachData } = await supabase
-          .from("profiles")
-          .select("id,full_name")
-          .in("role", ["coach", "founder"]);
+      // 1. Lista coach
+      const coachRes = await withTimeout(
+        supabase.from("profiles").select("id,full_name").in("role", ["coach", "founder"]),
+        6000,
+        { data: [] as Array<{ id: string; full_name: string }>, error: null },
+        "imp.coaches"
+      );
+      if (cancelled) return;
+      setCoaches((coachRes.data ?? []) as CoachOption[]);
 
-        if (cancelled) return;
-        setCoaches((coachData ?? []) as CoachOption[]);
+      // 2. Lista students (no join)
+      const studentsRes = await withTimeout(
+        supabase.from("students").select("id,level"),
+        6000,
+        { data: [] as Array<{ id: string; level: string }>, error: null },
+        "imp.students"
+      );
+      if (cancelled) return;
+      const studentsRaw = studentsRes.data ?? [];
 
-        const { data: studentsData } = await supabase
-          .from("students")
-          .select(
-            `
-            id,
-            level,
-            profile:profiles!inner(id,full_name,email,initials),
-            assignment:student_coach_assignments!inner(
-              coach_id,
-              coach:profiles!student_coach_assignments_coach_id_fkey(full_name)
-            )
-          `
-          )
-          .eq("assignment.status", "active");
-
-        if (cancelled) return;
-        const rows: StudentRow[] = (studentsData ?? []).map((s) => {
-          const profile = (s as { profile: { id: string; full_name: string; email: string; initials: string } | { id: string; full_name: string; email: string; initials: string }[] }).profile;
-          const p = Array.isArray(profile) ? profile[0] : profile;
-          const assignment = (s as { assignment: { coach_id: string; coach: { full_name: string } | { full_name: string }[] } | { coach_id: string; coach: { full_name: string } | { full_name: string }[] }[] }).assignment;
-          const a = Array.isArray(assignment) ? assignment[0] : assignment;
-          const coachProfile = a?.coach;
-          const c = Array.isArray(coachProfile) ? coachProfile[0] : coachProfile;
-          return {
-            id: s.id as string,
-            full_name: p?.full_name ?? "—",
-            email: p?.email ?? "",
-            initials: p?.initials ?? "??",
-            coach_id: a?.coach_id ?? null,
-            coach_name: c?.full_name ?? null,
-            level: (s.level as string) ?? "Base",
-          };
-        });
-        setStudents(rows);
-      } catch (e) {
-        console.error("[Impostazioni] load:", e);
-      } finally {
-        if (!cancelled) setLoading(false);
+      if (studentsRaw.length === 0) {
+        setStudents([]);
+        setLoading(false);
+        return;
       }
+
+      const studentIds = studentsRaw.map((s) => s.id);
+
+      // 3. Profiles studenti
+      const profilesRes = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("id,full_name,email,initials")
+          .in("id", studentIds),
+        6000,
+        { data: [] as Array<{ id: string; full_name: string; email: string; initials: string }>, error: null },
+        "imp.profiles"
+      );
+      if (cancelled) return;
+      const profileById = new Map<string, { full_name: string; email: string; initials: string }>();
+      (profilesRes.data ?? []).forEach((p) => {
+        profileById.set(p.id, { full_name: p.full_name, email: p.email, initials: p.initials });
+      });
+
+      // 4. Assignments attive
+      const assignsRes = await withTimeout(
+        supabase
+          .from("student_coach_assignments")
+          .select("student_id,coach_id,status")
+          .in("student_id", studentIds)
+          .eq("status", "active"),
+        6000,
+        { data: [] as Array<{ student_id: string; coach_id: string; status: string }>, error: null },
+        "imp.assignments"
+      );
+      if (cancelled) return;
+      const assignByStudent = new Map<string, string>();
+      const coachIdsSet = new Set<string>();
+      (assignsRes.data ?? []).forEach((a) => {
+        assignByStudent.set(a.student_id, a.coach_id);
+        coachIdsSet.add(a.coach_id);
+      });
+
+      // 5. Profili coach
+      const coachIds = Array.from(coachIdsSet);
+      const coachProfileById = new Map<string, { full_name: string }>();
+      if (coachIds.length > 0) {
+        const coachProfilesRes = await withTimeout(
+          supabase.from("profiles").select("id,full_name").in("id", coachIds),
+          6000,
+          { data: [] as Array<{ id: string; full_name: string }>, error: null },
+          "imp.coach_profiles"
+        );
+        if (cancelled) return;
+        (coachProfilesRes.data ?? []).forEach((p) => {
+          coachProfileById.set(p.id, { full_name: p.full_name });
+        });
+      }
+
+      const rows: StudentRow[] = studentsRaw.map((s) => {
+        const p = profileById.get(s.id);
+        const coachId = assignByStudent.get(s.id) ?? null;
+        const coach = coachId ? coachProfileById.get(coachId) : null;
+        return {
+          id: s.id,
+          full_name: p?.full_name ?? "—",
+          email: p?.email ?? "",
+          initials: p?.initials ?? "??",
+          coach_id: coachId,
+          coach_name: coach?.full_name ?? null,
+          level: s.level ?? "Base",
+        };
+      });
+      setStudents(rows);
+      setLoading(false);
     };
     load();
     return () => {
