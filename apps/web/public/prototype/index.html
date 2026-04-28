@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1440" />
+  <title>Marco Petta — Prototipo One-to-One Coaching</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@400;500;600;700;800;900&family=Fraunces:ital,opsz,wght,SOFT@0,9..144,300..700,0..100;1,9..144,300..700,0..100&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/lucide@0.454.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root{
+      --ink:#0B0B0D;
+      --ink-2:#141417;
+      --ink-3:#1D1D22;
+      --paper:#F5F3ED;
+      --paper-2:#ECE8DE;
+      --amber:#F2B744;
+      --amber-2:#D99A2B;
+      --amber-3:#8C6319;
+      --ember:#D63829;
+      --ember-2:#A82818;
+      --sand:#E8DFCC;
+      --smoke:#6D6D75;
+      --smoke-2:#9A9AA2;
+      --line:#D8D2C4;
+      --line-dark:#24242A;
+      --ok:#7BB07B;
+      --warn:#E04A3A;
+      --tip:#F2B744;
+    }
+    html,body{background:var(--ink);color:var(--paper);font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+    /* DISPLAY FONT = Big Shoulders Display — heavy, condensed, "rock poster" */
+    .font-display{font-family:'Big Shoulders Display',sans-serif;font-weight:800;letter-spacing:0;line-height:0.9;text-transform:uppercase;}
+    .font-display-light{font-family:'Big Shoulders Display',sans-serif;font-weight:600;line-height:0.95;text-transform:uppercase;letter-spacing:0.01em;}
+    .font-mono{font-family:'JetBrains Mono',monospace;}
+    /* EDITORIAL FONT = Fraunces — serif variabile con asse SOFT=100 (terminali arrotondati). Solo banner/H1/H2 desktop. */
+    .font-editorial{font-family:'Fraunces','Big Shoulders Display',serif;font-weight:500;line-height:1.05;text-transform:none;letter-spacing:-0.015em;font-variation-settings:"SOFT" 100,"opsz" 96;font-optical-sizing:auto;}
+    .font-editorial .italic-ember{font-family:'Fraunces',serif;font-style:italic;font-weight:500;color:var(--amber);text-transform:none;letter-spacing:-0.01em;font-variation-settings:"SOFT" 100,"opsz" 96;}
+    /* italic-ember NAME KEPT for legacy — now AMBER accent in display font */
+    .italic-ember{font-family:'Big Shoulders Display',sans-serif;font-style:normal;font-weight:800;color:var(--amber);text-transform:uppercase;}
+
+    /* Color utilities */
+    .bg-ink{background:var(--ink);} .bg-ink-2{background:var(--ink-2);} .bg-ink-3{background:var(--ink-3);}
+    .bg-paper{background:var(--paper);color:var(--ink);} .bg-paper-2{background:var(--paper-2);color:var(--ink);}
+    /* REMAP: "ember" class names now point to AMBER (the new primary yellow/gold).
+       True red-ember accents use .bg-red / .text-red / var(--ember) inline. */
+    .bg-ember{background:var(--amber);} .text-ember{color:var(--amber);}
+    .bg-amber{background:var(--amber);} .text-amber{color:var(--amber);}
+    .bg-red{background:var(--ember);} .text-red{color:var(--ember);}
+    .bg-sand{background:var(--sand);color:var(--ink);} .bg-smoke{background:var(--smoke);}
+    .text-ink{color:var(--ink);} .text-paper{color:var(--paper);} .text-smoke{color:var(--smoke-2);}
+    .border-line{border-color:var(--line);} .border-line-dark{border-color:var(--line-dark);}
+    .ring-amber{--tw-ring-color:var(--amber);}
+    .ring-ember{--tw-ring-color:var(--amber);}
+    .no-scrollbar::-webkit-scrollbar{display:none;}
+    .no-scrollbar{scrollbar-width:none;}
+    .grain{background-image:radial-gradient(rgba(11,11,13,0.04) 1px,transparent 1px);background-size:3px 3px;}
+    .grain-dark{background-image:radial-gradient(rgba(242,183,68,0.035) 1px,transparent 1px);background-size:3px 3px;}
+    .amber-glow{box-shadow:0 0 40px rgba(242,183,68,0.15), 0 0 80px rgba(242,183,68,0.08);}
+    .amber-glow-strong{box-shadow:0 0 60px rgba(242,183,68,0.28), 0 0 120px rgba(242,183,68,0.12), inset 0 0 0 1px rgba(242,183,68,0.15);}
+    .ember-glow{box-shadow:0 0 40px rgba(214,56,41,0.25), 0 0 80px rgba(214,56,41,0.1);}
+    .gradient-amber{background:linear-gradient(135deg, var(--amber) 0%, var(--ember) 100%);}
+    .gradient-amber-soft{background:linear-gradient(180deg, rgba(242,183,68,0.12) 0%, rgba(242,183,68,0) 70%);}
+    .gradient-radial-amber{background:radial-gradient(ellipse at center, rgba(242,183,68,0.22) 0%, transparent 60%);}
+    .gradient-radial-ember{background:radial-gradient(ellipse at center, rgba(214,56,41,0.25) 0%, transparent 60%);}
+    .fade-in{animation:fadeIn .35s ease-out;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+    .slide-up{animation:slideUp .4s ease-out;}
+    @keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
+    .rec-pulse{animation:recPulse 1.4s ease-in-out infinite;}
+    @keyframes recPulse{0%,100%{box-shadow:0 0 0 0 rgba(214,56,41,.55);}50%{box-shadow:0 0 0 14px rgba(214,56,41,0);}}
+    .amber-pulse{animation:amberPulse 2.2s ease-in-out infinite;}
+    @keyframes amberPulse{0%,100%{box-shadow:0 0 0 0 rgba(242,183,68,.45);}50%{box-shadow:0 0 0 12px rgba(242,183,68,0);}}
+    .marquee-dot{width:6px;height:6px;border-radius:99px;display:inline-block;}
+    .thumb-stripe{background:repeating-linear-gradient(135deg,#141417 0 12px,#1D1D22 12px 24px);}
+    .thumb-stripe-light{background:repeating-linear-gradient(135deg,#E8DFCC 0 12px,#D8CFB8 12px 24px);}
+    input[type=range]{-webkit-appearance:none;background:transparent;}
+    input[type=range]::-webkit-slider-runnable-track{height:3px;background:var(--line-dark);border-radius:99px;}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:99px;background:var(--amber);margin-top:-6px;border:2px solid var(--ink);}
+    .light input[type=range]::-webkit-slider-runnable-track{background:var(--line);}
+    .light input[type=range]::-webkit-slider-thumb{border-color:var(--paper);}
+    ::selection{background:var(--amber);color:var(--ink);}
+    /* Noise texture overlay for atmospheric feel */
+    .noise-overlay{position:relative;}
+    .noise-overlay::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:0.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-presets="env,react" src="src/data.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/ui.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_home.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_lesson.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_exercise.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_feedback.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_chat.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_community.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_dashboard.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_student.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_invite_student.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_students.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_team.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_settings.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_library.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/coach_review.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/ios-frame.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/student_mobile.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/variants.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/collab.jsx"></script>
+  <script type="text/babel" data-presets="env,react" src="src/app.jsx"></script>
+</body>
+</html>
