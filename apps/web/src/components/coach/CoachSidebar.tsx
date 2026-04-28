@@ -31,10 +31,15 @@ export function CoachSidebar() {
   const { profile } = useAuth();
   const location = useLocation();
 
-  const initials = profile?.initials || "MP";
-  const fullName = profile?.full_name || "Marco Petta";
-  const roleLabel =
-    profile?.role === "founder" ? "fondatore · admin" : profile?.role === "coach" ? "coach" : "utente";
+  const initials = profile?.initials || "—";
+  const fullName = profile?.full_name || "—";
+  const roleLabel = !profile
+    ? "caricamento…"
+    : profile.role === "founder"
+      ? "fondatore · admin"
+      : profile.role === "coach"
+        ? "coach"
+        : "studente";
 
   return (
     <aside className="w-[248px] bg-ink text-paper flex flex-col border-r border-line-dark min-h-screen">
