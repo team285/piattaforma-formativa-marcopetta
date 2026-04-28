@@ -65,23 +65,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Carica session iniziale
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session);
-      if (data.session?.user) {
-        const p = await loadProfile(data.session.user.id);
-        setProfile(p);
+    let mounted = true;
+
+    // Safety net: dopo 5s forziamo loading=false in ogni caso
+    // (evita schermo bloccato su "Caricamento" se qualcosa va storto)
+    const safetyTimeout = setTimeout(() => {
+      if (mounted) {
+        console.warn("[auth] safety timeout: forcing loading=false");
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    }, 5000);
+
+    const init = async () => {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (!mounted) return;
+        if (error) {
+          console.error("[auth] getSession error:", error);
+        } else {
+          setSession(data.session);
+          if (data.session?.user) {
+            const p = await loadProfile(data.session.user.id);
+            if (mounted) setProfile(p);
+          }
+        }
+      } catch (e) {
+        console.error("[auth] init exception:", e);
+      } finally {
+        if (mounted) {
+          clearTimeout(safetyTimeout);
+          setLoading(false);
+        }
+      }
+    };
+
+    init();
 
     // Subscribe a cambi sessione
     const { data: subscription } = supabase.auth.onAuthStateChange(
       async (_event, newSession) => {
+        if (!mounted) return;
         setSession(newSession);
         if (newSession?.user) {
           const p = await loadProfile(newSession.user.id);
-          setProfile(p);
+          if (mounted) setProfile(p);
         } else {
           setProfile(null);
         }
@@ -89,6 +116,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      mounted = false;
+      clearTimeout(safetyTimeout);
       subscription.subscription.unsubscribe();
     };
   }, []);
