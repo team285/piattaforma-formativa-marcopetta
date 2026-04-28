@@ -5,62 +5,66 @@ import { supabase } from "../lib/supabase";
 export default function AuthCallback() {
   const navigate = useNavigate();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [debug, setDebug] = useState<string>("Inizio…");
 
   useEffect(() => {
-    const handleCallback = async () => {
-      try {
-        const url = new URL(window.location.href);
-        setDebug("URL letto");
+    let cancelled = false;
 
-        // Errori dal redirect (es. magic link scaduto)
-        const errorParam = url.searchParams.get("error");
-        const errorDesc = url.searchParams.get("error_description");
-        if (errorParam) {
-          setErrorMsg(errorDesc || errorParam);
-          return;
-        }
+    // Errori dal redirect (es. magic link scaduto/già usato)
+    const url = new URL(window.location.href);
+    const errParam = url.searchParams.get("error");
+    const errDesc = url.searchParams.get("error_description");
+    if (errParam) {
+      setErrorMsg(errDesc || errParam);
+      return;
+    }
 
-        // PKCE flow: code in query string
-        const code = url.searchParams.get("code");
-        if (code) {
-          setDebug("Scambio code per session…");
-          const { error: exchErr } = await supabase.auth.exchangeCodeForSession(
-            code
-          );
-          if (exchErr) {
-            setErrorMsg(`exchange: ${exchErr.message}`);
-            return;
-          }
-          setDebug("Code scambiato");
-        }
-
-        // Implicit flow: hash con access_token (legacy ma supportato)
-        // Il client gestisce l'hash automaticamente con detectSessionInUrl=true.
-        // Aspettiamo un attimo per dargli tempo.
-        await new Promise((r) => setTimeout(r, 300));
-
-        setDebug("Controllo session…");
-        const { data, error: sessErr } = await supabase.auth.getSession();
-        if (sessErr) {
-          setErrorMsg(`session: ${sessErr.message}`);
-          return;
-        }
-
-        if (data.session) {
-          setDebug("Session OK, redirect home");
-          navigate("/", { replace: true });
-        } else {
-          setErrorMsg(
-            "Nessuna sessione trovata. Il link potrebbe essere scaduto o già usato."
-          );
-        }
-      } catch (e: any) {
-        setErrorMsg(`Errore inatteso: ${e?.message || String(e)}`);
+    // Subscribe a cambi auth: appena la session è pronta naviga a home.
+    // Lasciamo che il client gestisca il code exchange automaticamente
+    // (detectSessionInUrl: true) per evitare race condition con il lock.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (cancelled) return;
+      if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
+        cancelled = true;
+        sub.subscription.unsubscribe();
+        navigate("/", { replace: true });
       }
+    });
+
+    // Polling fallback: se il client aveva già processato la session prima
+    // del mount (HMR/refresh), onAuthStateChange potrebbe non re-firare
+    const checkExisting = async () => {
+      // breve attesa per dare tempo al client di processare l'URL
+      await new Promise((r) => setTimeout(r, 500));
+      if (cancelled) return;
+
+      const { data } = await supabase.auth.getSession();
+      if (cancelled) return;
+
+      if (data.session) {
+        cancelled = true;
+        sub.subscription.unsubscribe();
+        navigate("/", { replace: true });
+        return;
+      }
+
+      // Nessuna session ancora — diamo tempo al subscribe (timeout 4s totale)
+      setTimeout(() => {
+        if (!cancelled) {
+          cancelled = true;
+          sub.subscription.unsubscribe();
+          setErrorMsg(
+            "Nessuna sessione trovata. Il link potrebbe essere scaduto o già usato. Richiedi un nuovo magic link."
+          );
+        }
+      }, 4000);
     };
 
-    handleCallback();
+    checkExisting();
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, [navigate]);
 
   return (
@@ -84,7 +88,9 @@ export default function AuthCallback() {
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber mb-3">
               Accesso in corso…
             </div>
-            <div className="text-smoke-2 text-sm">{debug}</div>
+            <div className="text-smoke-2 text-sm">
+              Verifica del magic link, un attimo.
+            </div>
           </>
         )}
       </div>
