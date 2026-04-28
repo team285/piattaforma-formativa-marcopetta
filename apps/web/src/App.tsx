@@ -1,20 +1,70 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "./lib/auth";
+import Login from "./pages/Login";
+import AuthCallback from "./pages/AuthCallback";
+import Home from "./pages/Home";
+
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
+        <div className="text-smoke-2 font-mono text-sm">Caricamento…</div>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function RedirectIfAuth({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
+        <div className="text-smoke-2 font-mono text-sm">Caricamento…</div>
+      </div>
+    );
+  }
+
+  if (session) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
-    <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
-      <div className="max-w-md text-center px-6">
-        <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-amber mb-3">
-          MPCoach · setup ok
-        </div>
-        <h1 className="font-editorial text-[54px] leading-[1.05]">
-          Smetti di suonare a caso.
-          <br />
-          <span className="italic text-amber">Inizia a capire.</span>
-        </h1>
-        <p className="text-smoke-2 text-sm mt-5">
-          Scaffold Fase 1 completato. Auth Supabase e migrazione schermate in
-          arrivo.
-        </p>
-      </div>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <RedirectIfAuth>
+                <Login />
+              </RedirectIfAuth>
+            }
+          />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <Home />
+              </RequireAuth>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
