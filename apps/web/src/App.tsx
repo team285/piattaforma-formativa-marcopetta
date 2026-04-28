@@ -23,6 +23,37 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/**
+ * RoleGate — sceglie l'home a seconda del ruolo:
+ *  - coach / founder → vista nativa TSX (Preview / sidebar)
+ *  - student         → iframe del prototipo (finche' non portiamo le student views)
+ *
+ * Dev users (Luca) possono forzare l'iframe via /iframe per testare.
+ */
+function RoleGate() {
+  const { profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
+        <div className="text-smoke-2 font-mono text-sm">Caricamento…</div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    // Profile not yet loaded → show iframe Home (gestisce timeout/retry interno)
+    return <Home />;
+  }
+
+  if (profile.role === "coach" || profile.role === "founder") {
+    return <Navigate to="/coach/dashboard" replace />;
+  }
+
+  // student → iframe (porting student views in arrivo)
+  return <Home />;
+}
+
 function RedirectIfAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
 
@@ -56,6 +87,14 @@ export default function App() {
           />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
+            path="/coach/*"
+            element={
+              <RequireAuth>
+                <Preview />
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/preview/*"
             element={
               <RequireAuth>
@@ -64,10 +103,18 @@ export default function App() {
             }
           />
           <Route
-            path="/"
+            path="/iframe"
             element={
               <RequireAuth>
                 <Home />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <RoleGate />
               </RequireAuth>
             }
           />

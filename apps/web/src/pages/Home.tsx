@@ -172,7 +172,7 @@ export default function Home() {
             <span style={{ flex: 1 }} />
             {dev && (
               <a
-                href="/preview/coach/dashboard"
+                href="/coach/dashboard"
                 style={{
                   background: "rgba(242,183,68,0.18)",
                   border: "1px solid rgba(242,183,68,0.5)",

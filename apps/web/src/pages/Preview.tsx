@@ -1,10 +1,10 @@
 /**
- * Preview — entry point per la versione nativa TSX in sviluppo.
+ * Preview / Coach — vista nativa TSX collegata al DB.
  *
- * URL: /preview/coach/dashboard, /preview/coach/studenti, ecc.
- *
- * Quando le pagine native sono complete e stabili, le promuoviamo a
- * route principale (/coach/...) sostituendo l'iframe del prototipo.
+ * Stesso componente montato sia su /coach/* (canonical) che /preview/* (legacy).
+ * Le route inner sono replicate per coprire entrambi i base path:
+ *   - /coach/dashboard       → relativo "dashboard"
+ *   - /preview/coach/dashboard → relativo "coach/dashboard"
  */
 
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -24,6 +24,16 @@ export default function Preview() {
       <CoachSidebar />
       <main className="flex-1 min-w-0">
         <Routes>
+          {/* Mount canonical: /coach/* */}
+          <Route path="dashboard" element={<CoachDashboard />} />
+          <Route path="studenti" element={<CoachStudenti />} />
+          <Route path="team" element={<CoachTeam />} />
+          <Route path="libreria" element={<CoachLibreria />} />
+          <Route path="review" element={<CoachReview />} />
+          <Route path="chat" element={<CoachChat />} />
+          <Route path="impostazioni" element={<CoachImpostazioni />} />
+
+          {/* Mount legacy: /preview/coach/* */}
           <Route path="coach/dashboard" element={<CoachDashboard />} />
           <Route path="coach/studenti" element={<CoachStudenti />} />
           <Route path="coach/team" element={<CoachTeam />} />
@@ -31,8 +41,9 @@ export default function Preview() {
           <Route path="coach/review" element={<CoachReview />} />
           <Route path="coach/chat" element={<CoachChat />} />
           <Route path="coach/impostazioni" element={<CoachImpostazioni />} />
-          <Route path="coach" element={<Navigate to="/preview/coach/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/preview/coach/dashboard" replace />} />
+          <Route path="coach" element={<Navigate to="/coach/dashboard" replace />} />
+
+          <Route path="*" element={<Navigate to="/coach/dashboard" replace />} />
         </Routes>
       </main>
       <MPToastHost />

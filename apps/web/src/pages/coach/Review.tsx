@@ -85,7 +85,7 @@ export function CoachReview() {
             {queue.map((q) => (
               <Link
                 key={q.submission_id}
-                to={`/preview/coach/review/${q.submission_id}`}
+                to={`/coach/review/${q.submission_id}`}
                 className="w-full flex items-center gap-5 p-5 hover:bg-sand transition border-t border-line first:border-t-0 group"
               >
                 <Avatar
