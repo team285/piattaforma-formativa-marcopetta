@@ -120,7 +120,12 @@ export function MobileNav({ nav, variant }: MobileNavProps) {
             </div>
           </div>
         </div>
-        <Avatar initials={initials} size={32} tone="ember" />
+        <Avatar
+          initials={initials}
+          size={32}
+          tone="ember"
+          imageUrl={profile?.avatar_url ?? null}
+        />
       </div>
 
       {/* Drawer overlay */}
@@ -203,7 +208,12 @@ export function MobileNav({ nav, variant }: MobileNavProps) {
                   onClick={() => setOpen(false)}
                   className="flex items-center gap-3 mb-3 group"
                 >
-                  <Avatar initials={initials} size={36} tone="ember" />
+                  <Avatar
+                    initials={initials}
+                    size={36}
+                    tone="ember"
+                    imageUrl={profile?.avatar_url ?? null}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] truncate group-hover:text-[var(--amber)] transition">
                       {fullName}
@@ -216,7 +226,12 @@ export function MobileNav({ nav, variant }: MobileNavProps) {
                 </Link>
               ) : (
                 <div className="flex items-center gap-3 mb-3">
-                  <Avatar initials={initials} size={36} tone="ember" />
+                  <Avatar
+                    initials={initials}
+                    size={36}
+                    tone="ember"
+                    imageUrl={profile?.avatar_url ?? null}
+                  />
                   <div className="flex-1 min-w-0">
                     <div className="text-[13px] truncate">{fullName}</div>
                     <div className="font-mono text-[10px] uppercase tracking-wider text-[#9E8E82]">

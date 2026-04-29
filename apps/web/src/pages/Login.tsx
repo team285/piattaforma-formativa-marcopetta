@@ -168,7 +168,13 @@ export default function Login() {
                   {status === "sending" ? "Accesso in corso…" : "Accedi"}
                 </button>
 
-                <div className="pt-3 border-t border-line-dark text-center">
+                <div className="pt-3 border-t border-line-dark text-center space-y-2">
+                  <a
+                    href="/forgot-password"
+                    className="block text-smoke-2 hover:text-amber font-mono text-xs uppercase tracking-wider"
+                  >
+                    Password dimenticata? Reset via email
+                  </a>
                   <button
                     type="button"
                     onClick={() => {
@@ -178,7 +184,7 @@ export default function Login() {
                     }}
                     className="text-smoke-2 hover:text-amber font-mono text-xs uppercase tracking-wider"
                   >
-                    Password dimenticata? Ricevi un link via email
+                    Oppure entra con magic link
                   </button>
                 </div>
               </form>

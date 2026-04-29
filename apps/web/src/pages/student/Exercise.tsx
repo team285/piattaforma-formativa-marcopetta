@@ -216,7 +216,19 @@ export function StudentExercise() {
                       .eq("exercise_id", active.id);
                     const takeNumber = (count ?? 0) + 1;
 
-                    const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+                    // Inferisci estensione dal mime type o dal nome file (per upload)
+                    const inferExt = (b: Blob): string => {
+                      if (b.type.includes("mp4")) return "mp4";
+                      if (b.type.includes("quicktime")) return "mov";
+                      if (b.type.includes("webm")) return "webm";
+                      // Per File con name disponibile
+                      if ("name" in b && typeof (b as File).name === "string") {
+                        const m = (b as File).name.match(/\.([a-z0-9]+)$/i);
+                        if (m) return m[1].toLowerCase();
+                      }
+                      return "webm";
+                    };
+                    const ext = inferExt(blob);
                     const path = `${profile.id}/${active.id}/take_${takeNumber}.${ext}`;
 
                     const uploadRes = await supabase.storage

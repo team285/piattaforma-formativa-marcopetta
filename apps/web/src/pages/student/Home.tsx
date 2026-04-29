@@ -35,10 +35,20 @@ interface PathInfo {
   progress_pct: number | null;
 }
 
+interface RatingsAvg {
+  tempo: number;
+  tono: number;
+  tecnica: number;
+  groove: number;
+  espressione: number;
+  count: number;
+}
+
 export function StudentHome() {
   const { profile } = useAuth();
   const [path, setPath] = useState<PathInfo | null>(null);
   const [exercises, setExercises] = useState<ExerciseRow[]>([]);
+  const [ratingsAvg, setRatingsAvg] = useState<RatingsAvg | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -93,6 +103,81 @@ export function StudentHome() {
       }));
       setExercises(rows);
       setLoading(false);
+
+      // Skills radar: pipeline separata in 3 step
+      // 1. submissions dell'utente (ID list)
+      // 2. feedbacks su quelle submissions (ID list)
+      // 3. feedback_ratings per quei feedback_id → media
+      const subsRes = await withTimeout(
+        supabase.from("submissions").select("id").eq("student_id", profile.id).limit(50),
+        5000,
+        { data: [] as Array<{ id: string }>, error: null },
+        "student.subs_for_radar"
+      );
+      if (cancelled) return;
+      const subIds = (subsRes.data ?? []).map((s) => s.id);
+      if (subIds.length === 0) {
+        setRatingsAvg(null);
+        return;
+      }
+
+      const fbRes = await withTimeout(
+        supabase.from("feedbacks").select("id").in("submission_id", subIds).limit(50),
+        5000,
+        { data: [] as Array<{ id: string }>, error: null },
+        "student.fb_for_radar"
+      );
+      if (cancelled) return;
+      const fbIds = (fbRes.data ?? []).map((f) => f.id);
+      if (fbIds.length === 0) {
+        setRatingsAvg(null);
+        return;
+      }
+
+      const ratingsRes = await withTimeout(
+        supabase
+          .from("feedback_ratings")
+          .select("tempo,tono,tecnica,groove,espressione")
+          .in("feedback_id", fbIds),
+        5000,
+        {
+          data: [] as Array<{
+            tempo: number;
+            tono: number;
+            tecnica: number;
+            groove: number;
+            espressione: number;
+          }>,
+          error: null,
+        },
+        "student.ratings_avg"
+      );
+      if (cancelled) return;
+      const ratingsRows = ratingsRes.data ?? [];
+      if (ratingsRows.length === 0) {
+        setRatingsAvg(null);
+        return;
+      }
+
+      const sum = ratingsRows.reduce(
+        (acc, r) => ({
+          tempo: acc.tempo + r.tempo,
+          tono: acc.tono + r.tono,
+          tecnica: acc.tecnica + r.tecnica,
+          groove: acc.groove + r.groove,
+          espressione: acc.espressione + r.espressione,
+        }),
+        { tempo: 0, tono: 0, tecnica: 0, groove: 0, espressione: 0 }
+      );
+      const n = ratingsRows.length;
+      setRatingsAvg({
+        tempo: sum.tempo / n,
+        tono: sum.tono / n,
+        tecnica: sum.tecnica / n,
+        groove: sum.groove / n,
+        espressione: sum.espressione / n,
+        count: n,
+      });
     };
     load();
     return () => {
@@ -286,6 +371,53 @@ export function StudentHome() {
             </div>
           )}
         </div>
+
+        {/* Skills radar — solo se ho almeno un feedback con rating */}
+        {ratingsAvg && (
+          <div className="mt-14 border-t border-line pt-10">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
+              <EditorialH kicker={`Aggregato di ${ratingsAvg.count} ${ratingsAvg.count === 1 ? "feedback" : "feedback"}`}>
+                Le tue <span className="italic-ember">competenze</span> in numeri.
+              </EditorialH>
+              <div className="text-[13px] text-smoke max-w-[280px]">
+                Media delle valutazioni che Marco ti ha dato finora. Più alto è meglio è.
+              </div>
+            </div>
+
+            <div className="bg-paper-2 border border-line rounded-[3px] p-5 md:p-6">
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
+                {(
+                  [
+                    ["tempo", "Tempo"],
+                    ["tono", "Tono"],
+                    ["tecnica", "Tecnica"],
+                    ["groove", "Groove"],
+                    ["espressione", "Espressione"],
+                  ] as Array<[keyof RatingsAvg, string]>
+                ).map(([k, label]) => {
+                  const value = ratingsAvg[k];
+                  const numValue = typeof value === "number" ? value : 0;
+                  return (
+                    <div key={k}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[12px] text-ink font-medium">{label}</span>
+                        <span className="font-mono text-[11px] text-smoke">
+                          {numValue.toFixed(1)}
+                        </span>
+                      </div>
+                      <div className="h-1 rounded-full bg-line overflow-hidden">
+                        <div
+                          className="h-full bg-[var(--ember)] transition-all"
+                          style={{ width: `${numValue * 20}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

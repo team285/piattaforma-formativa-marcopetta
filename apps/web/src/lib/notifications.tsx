@@ -23,6 +23,36 @@ import { supabase } from "./supabase";
 import { useAuth } from "./auth";
 import { toast } from "../components/ui";
 
+// ─── Browser Notifications ──────────────────────────────────────────
+type BrowserPermission = "default" | "granted" | "denied" | "unsupported";
+
+function getBrowserPermission(): BrowserPermission {
+  if (typeof window === "undefined" || typeof Notification === "undefined") return "unsupported";
+  return Notification.permission as BrowserPermission;
+}
+
+async function requestBrowserPermission(): Promise<BrowserPermission> {
+  if (typeof Notification === "undefined") return "unsupported";
+  const result = await Notification.requestPermission();
+  return result as BrowserPermission;
+}
+
+function showBrowserNotification(title: string, body: string) {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  // Solo se la finestra è in background (tab non visibile)
+  if (typeof document !== "undefined" && document.visibilityState === "visible") return;
+  try {
+    new Notification(title, {
+      body,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: "mpcoach", // raggruppa, sostituisce la precedente
+    });
+  } catch (e) {
+    console.warn("[notifications] browser notif failed:", e);
+  }
+}
+
 interface NotificationCounters {
   unreadMessages: number;
   pendingReviews: number; // coach only
@@ -32,6 +62,8 @@ interface NotificationCounters {
 
 interface NotificationsContextValue extends NotificationCounters {
   refresh: () => Promise<void>;
+  browserPermission: BrowserPermission;
+  requestPermission: () => Promise<void>;
 }
 
 const NotificationsContext = createContext<NotificationsContextValue>({
@@ -40,6 +72,8 @@ const NotificationsContext = createContext<NotificationsContextValue>({
   newFeedback: 0,
   pendingExercises: 0,
   refresh: async () => {},
+  browserPermission: "default",
+  requestPermission: async () => {},
 });
 
 export function useNotifications() {
@@ -58,6 +92,14 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     newFeedback: 0,
     pendingExercises: 0,
   });
+  const [browserPermission, setBrowserPermission] = useState<BrowserPermission>(
+    getBrowserPermission()
+  );
+
+  const requestPermission = async () => {
+    const result = await requestBrowserPermission();
+    setBrowserPermission(result);
+  };
 
   const refresh = async () => {
     if (!profile?.id) return;
@@ -129,50 +171,55 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         const msg = payload.new as { sender_id: string; thread_id: string; body: string };
         if (msg.sender_id === profile.id) return; // sono io che ho scritto, skip
 
-        // Toast solo se non sono nella pagina chat
+        const preview = msg.body.length > 60 ? msg.body.slice(0, 57) + "…" : msg.body;
         if (!locationRef.current.includes("/chat")) {
-          const preview = msg.body.length > 60 ? msg.body.slice(0, 57) + "…" : msg.body;
           toast(`Nuovo messaggio: "${preview}"`, "info");
+          showBrowserNotification("Nuovo messaggio", preview);
         }
         refresh();
       }
     );
 
     if (isCoach) {
-      // submissions INSERT (nuova take da correggere)
       channel.on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "submissions" },
         () => {
           if (!locationRef.current.includes("/coach/review")) {
             toast("Nuova take da correggere", "info");
+            showBrowserNotification(
+              "Nuova take",
+              "Uno studente ha appena inviato una take da correggere."
+            );
           }
           refresh();
         }
       );
     } else {
-      // student: feedbacks INSERT (nuovo feedback su una mia submission)
-      // RLS già filtra per propri submissions, ma per essere sicuri ricarichiamo
       channel.on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "feedbacks" },
         () => {
           if (!locationRef.current.includes("/student/feedback")) {
             toast("Nuovo feedback da Marco", "ok");
+            showBrowserNotification("Nuovo feedback", "Marco ha appena risposto a una tua take.");
           }
           refresh();
         }
       );
 
-      // exercises status update (assigned o reviewed)
       channel.on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "exercises" },
         (payload) => {
           const ex = payload.new as { student_id: string; title: string };
           if (ex.student_id !== profile.id) return;
-          if (!locationRef.current.includes("/student/home") && !locationRef.current.includes("/student/esercizio")) {
+          if (
+            !locationRef.current.includes("/student/home") &&
+            !locationRef.current.includes("/student/esercizio")
+          ) {
             toast(`Nuovo esercizio: ${ex.title}`, "info");
+            showBrowserNotification("Nuovo esercizio", ex.title);
           }
           refresh();
         }
@@ -187,7 +234,9 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
   }, [profile?.id, profile?.role]);
 
   return (
-    <NotificationsContext.Provider value={{ ...counters, refresh }}>
+    <NotificationsContext.Provider
+      value={{ ...counters, refresh, browserPermission, requestPermission }}
+    >
       {children}
     </NotificationsContext.Provider>
   );

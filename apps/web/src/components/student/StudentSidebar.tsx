@@ -115,7 +115,12 @@ export function StudentSidebar() {
           className="flex items-center gap-3 mb-3 group"
           title="Apri impostazioni account"
         >
-          <Avatar initials={initials} size={34} tone="ember" />
+          <Avatar
+            initials={initials}
+            size={34}
+            tone="ember"
+            imageUrl={profile?.avatar_url ?? null}
+          />
           <div className="flex-1 min-w-0">
             <div className="text-[13px] truncate group-hover:text-[var(--amber)] transition">
               {fullName}

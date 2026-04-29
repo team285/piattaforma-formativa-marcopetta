@@ -8,11 +8,40 @@ interface AvatarProps {
   size?: number;
   tone?: "ink" | "ember" | "sand";
   ring?: boolean;
+  imageUrl?: string | null;
 }
 
-export function Avatar({ initials = "MP", size = 36, tone = "ink", ring = false }: AvatarProps) {
+export function Avatar({
+  initials = "MP",
+  size = 36,
+  tone = "ink",
+  ring = false,
+  imageUrl,
+}: AvatarProps) {
   const bg = tone === "ink" ? "var(--ink-3)" : tone === "ember" ? "var(--amber)" : "var(--sand)";
   const fg = tone === "sand" || tone === "ember" ? "var(--ink)" : "var(--paper)";
+
+  if (imageUrl) {
+    return (
+      <img
+        src={imageUrl}
+        alt={initials}
+        width={size}
+        height={size}
+        loading="lazy"
+        className={
+          "object-cover rounded-full bg-[var(--ink-3)] " +
+          (ring ? "ring-2 ring-offset-2 ring-[var(--amber)] ring-offset-[var(--ink)]" : "")
+        }
+        style={{ width: size, height: size }}
+        onError={(e) => {
+          // Fallback: nasconde l'img rotta — mostriamo solo lo sfondo a iniziali (vedi sotto)
+          (e.currentTarget as HTMLImageElement).style.display = "none";
+        }}
+      />
+    );
+  }
+
   return (
     <div
       className={

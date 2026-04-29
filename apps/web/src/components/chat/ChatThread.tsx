@@ -31,6 +31,7 @@ interface ChatThreadProps {
   peerInitials: string;
   meId: string;
   onBack?: () => void; // mostra back button (mobile)
+  onPeerClick?: () => void; // quando si clicca avatar/nome del peer
 }
 
 const PAL = {
@@ -54,6 +55,7 @@ export function ChatThread({
   peerInitials,
   meId,
   onBack,
+  onPeerClick,
 }: ChatThreadProps) {
   const { refresh: refreshNotifications } = useNotifications();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -202,35 +204,75 @@ export function ChatThread({
             <Icon name="chevronl" size={14} />
           </button>
         )}
-        <Avatar initials={peerInitials} size={42} tone="ember" />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              fontFamily: "'Big Shoulders Display',sans-serif",
-              fontWeight: 800,
-              fontSize: 20,
-              textTransform: "uppercase",
-              letterSpacing: "0.01em",
-              color: "#0B0B0D",
-              lineHeight: 1,
-            }}
-            className="truncate"
+        {onPeerClick ? (
+          <button
+            onClick={onPeerClick}
+            className="flex items-center gap-3 flex-1 min-w-0 text-left hover:opacity-80 transition"
+            title="Apri profilo"
           >
-            {peerName}
-          </div>
-          <div
-            style={{
-              fontFamily: "JetBrains Mono,monospace",
-              fontSize: 10,
-              letterSpacing: "0.15em",
-              textTransform: "uppercase",
-              color: PAL.subtext,
-              marginTop: 4,
-            }}
-          >
-            online · realtime
-          </div>
-        </div>
+            <Avatar initials={peerInitials} size={42} tone="ember" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: "'Big Shoulders Display',sans-serif",
+                  fontWeight: 800,
+                  fontSize: 20,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.01em",
+                  color: "#0B0B0D",
+                  lineHeight: 1,
+                }}
+                className="truncate"
+              >
+                {peerName}
+              </div>
+              <div
+                style={{
+                  fontFamily: "JetBrains Mono,monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  color: PAL.subtext,
+                  marginTop: 4,
+                }}
+              >
+                apri profilo · realtime
+              </div>
+            </div>
+          </button>
+        ) : (
+          <>
+            <Avatar initials={peerInitials} size={42} tone="ember" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontFamily: "'Big Shoulders Display',sans-serif",
+                  fontWeight: 800,
+                  fontSize: 20,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.01em",
+                  color: "#0B0B0D",
+                  lineHeight: 1,
+                }}
+                className="truncate"
+              >
+                {peerName}
+              </div>
+              <div
+                style={{
+                  fontFamily: "JetBrains Mono,monospace",
+                  fontSize: 10,
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                  color: PAL.subtext,
+                  marginTop: 4,
+                }}
+              >
+                online · realtime
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Messaggi */}

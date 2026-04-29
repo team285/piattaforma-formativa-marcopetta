@@ -120,7 +120,12 @@ export function CoachSidebar() {
       {/* Footer profilo utente loggato + logout */}
       <div className="px-4 py-4 border-t border-line-dark">
         <div className="flex items-center gap-3 mb-3">
-          <Avatar initials={initials} size={34} tone="ember" />
+          <Avatar
+            initials={initials}
+            size={34}
+            tone="ember"
+            imageUrl={profile?.avatar_url ?? null}
+          />
           <div className="flex-1 min-w-0">
             <div className="text-[13px] truncate">{fullName}</div>
             <div className="font-mono text-[10px] uppercase tracking-wider text-[#9E8E82]">

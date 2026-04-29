@@ -14,6 +14,8 @@ import { useEffect, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Avatar, Icon, toast } from "../../components/ui";
+import { NotificationsPermission } from "../../components/NotificationsPermission";
+import { AvatarUpload } from "../../components/AvatarUpload";
 
 interface StudentRow {
   id: string;
@@ -251,12 +253,20 @@ export function CoachImpostazioni() {
           </div>
           <div className="bg-paper-2 border border-line rounded-[3px] p-5 md:p-6">
             <div className="flex items-start gap-5 md:gap-6 mb-5 pb-5 border-b border-line">
-              <Avatar initials={profile?.initials ?? "MP"} size={56} tone="ember" />
+              <AvatarUpload
+                size={64}
+                currentUrl={profile?.avatar_url ?? null}
+                initials={profile?.initials ?? "MP"}
+                tone="ember"
+              />
               <div className="flex-1 min-w-0">
                 <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mb-1">
                   {profile?.role === "founder" ? "Fondatore · Metodo P.G.T." : "Coach"}
                 </div>
                 <div className="font-mono text-[13px] text-ink break-all">{profile?.email ?? ""}</div>
+                <div className="text-[11px] text-smoke mt-2">
+                  Clicca sul cerchio per cambiare la foto profilo.
+                </div>
               </div>
             </div>
 
@@ -472,7 +482,7 @@ export function CoachImpostazioni() {
           )}
         </div>
 
-        {/* SEZIONE 3: Notifiche (placeholder) */}
+        {/* SEZIONE 3: Notifiche */}
         <div>
           <div className="flex items-center gap-3 mb-5">
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)]">
@@ -480,14 +490,10 @@ export function CoachImpostazioni() {
             </div>
             <div className="flex-1 border-t border-line" />
           </div>
-          <div className="bg-paper-2 border border-line rounded-[3px] p-8 text-center">
-            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-3">
-              In arrivo
-            </div>
-            <p className="text-smoke text-[14px] max-w-lg mx-auto">
-              Preferenze notifiche email + push saranno configurabili appena Resend SMTP sarà attivo.
-            </p>
-          </div>
+          <NotificationsPermission variant="paper" />
+          <p className="text-smoke text-[12px] mt-3">
+            Notifiche email arriveranno appena Resend SMTP sarà attivo.
+          </p>
         </div>
       </div>
 

@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Avatar } from "../../components/ui";
@@ -26,6 +27,7 @@ interface ThreadRow {
 
 export function CoachChat() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [threads, setThreads] = useState<ThreadRow[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -236,6 +238,7 @@ export function CoachChat() {
             peerInitials={active.student_initials}
             meId={profile.id}
             onBack={() => setActiveId(null)}
+            onPeerClick={() => navigate(`/coach/studenti/${active.student_id}`)}
           />
         ) : (
           <div className="flex-1 flex items-center justify-center text-smoke text-[13px]">

@@ -2,10 +2,12 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { NotificationsProvider } from "./lib/notifications";
 import Login from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
 import AuthCallback from "./pages/AuthCallback";
 import Home from "./pages/Home";
 import Preview from "./pages/Preview";
 import Student from "./pages/Student";
+import NotFound from "./pages/NotFound";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -88,6 +90,14 @@ export default function App() {
               </RedirectIfAuth>
             }
           />
+          <Route
+            path="/forgot-password"
+            element={
+              <RedirectIfAuth>
+                <ForgotPassword />
+              </RedirectIfAuth>
+            }
+          />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route
             path="/coach/*"
@@ -129,7 +139,14 @@ export default function App() {
               </RequireAuth>
             }
           />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route
+            path="*"
+            element={
+              <RequireAuth>
+                <NotFound />
+              </RequireAuth>
+            }
+          />
         </Routes>
         </NotificationsProvider>
       </AuthProvider>

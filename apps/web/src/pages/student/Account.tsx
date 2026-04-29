@@ -13,7 +13,9 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { Avatar, Icon, toast } from "../../components/ui";
+import { Icon, toast } from "../../components/ui";
+import { NotificationsPermission } from "../../components/NotificationsPermission";
+import { AvatarUpload } from "../../components/AvatarUpload";
 
 function deriveInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -109,12 +111,20 @@ export function StudentAccount() {
           </div>
 
           <div className="bg-paper-2 border border-line rounded-[3px] p-5 md:p-6 flex items-start gap-5">
-            <Avatar initials={profile?.initials ?? "??"} size={64} tone="ember" />
+            <AvatarUpload
+              size={72}
+              currentUrl={profile?.avatar_url ?? null}
+              initials={profile?.initials ?? "??"}
+              tone="ember"
+            />
             <div className="flex-1 min-w-0">
               <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mb-1">
                 Email di login
               </div>
               <div className="font-mono text-[13px] text-ink break-all">{profile?.email ?? ""}</div>
+              <div className="text-[11px] text-smoke mt-2">
+                Clicca sul cerchio per caricare la foto profilo (jpg/png/webp, max 4MB).
+              </div>
             </div>
           </div>
 
@@ -153,11 +163,22 @@ export function StudentAccount() {
           </div>
         </div>
 
-        {/* Sezione 2: Password */}
+        {/* Sezione 1.5: Notifiche browser */}
         <div className="mb-12">
           <div className="flex items-center gap-3 mb-5">
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)]">
-              02 · Password
+              02 · Notifiche
+            </div>
+            <div className="flex-1 border-t border-line" />
+          </div>
+          <NotificationsPermission variant="paper" />
+        </div>
+
+        {/* Sezione 3: Password */}
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)]">
+              03 · Password
             </div>
             <div className="flex-1 border-t border-line" />
           </div>
