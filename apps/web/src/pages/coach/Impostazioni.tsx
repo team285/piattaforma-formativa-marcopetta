@@ -40,7 +40,7 @@ function generateTempPassword(): string {
 }
 
 export function CoachImpostazioni() {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [coaches, setCoaches] = useState<CoachOption[]>([]);
   const [search, setSearch] = useState("");
@@ -48,6 +48,66 @@ export function CoachImpostazioni() {
   const [editing, setEditing] = useState<StudentRow | null>(null);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
+
+  // Profilo edit state
+  const [profileNome, setProfileNome] = useState("");
+  const [profileCognome, setProfileCognome] = useState("");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [pwd, setPwd] = useState("");
+  const [pwdConfirm, setPwdConfirm] = useState("");
+  const [showPwd, setShowPwd] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
+
+  useEffect(() => {
+    if (!profile) return;
+    const parts = profile.full_name.split(/\s+/);
+    setProfileNome(parts[0] ?? "");
+    setProfileCognome(parts.slice(1).join(" "));
+  }, [profile]);
+
+  const saveCoachProfile = async () => {
+    if (!profile) return;
+    if (!profileNome.trim() || !profileCognome.trim()) {
+      toast("Nome e cognome richiesti", "warn");
+      return;
+    }
+    const fullName = `${profileNome.trim()} ${profileCognome.trim()}`;
+    const newInitials =
+      ((profileNome.trim()[0] ?? "") + (profileCognome.trim()[0] ?? "")).toUpperCase() || "??";
+    setSavingProfile(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ full_name: fullName, initials: newInitials })
+      .eq("id", profile.id);
+    setSavingProfile(false);
+    if (error) {
+      toast(`Errore: ${error.message}`, "warn");
+      return;
+    }
+    toast("Profilo aggiornato", "ok");
+    await refreshProfile();
+  };
+
+  const saveCoachPassword = async () => {
+    if (pwd.length < 8) {
+      toast("Password troppo corta (min 8 caratteri)", "warn");
+      return;
+    }
+    if (pwd !== pwdConfirm) {
+      toast("Le due password non coincidono", "warn");
+      return;
+    }
+    setSavingPwd(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd });
+    setSavingPwd(false);
+    if (error) {
+      toast(`Errore: ${error.message}`, "warn");
+      return;
+    }
+    setPwd("");
+    setPwdConfirm("");
+    toast("Password aggiornata. Al prossimo login usa la nuova.", "ok");
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -189,16 +249,100 @@ export function CoachImpostazioni() {
             </div>
             <div className="flex-1 border-t border-line" />
           </div>
-          <div className="bg-paper-2 border border-line rounded-[3px] p-6 flex items-start gap-6">
-            <Avatar initials={profile?.initials ?? "MP"} size={72} tone="ember" />
-            <div className="flex-1 min-w-0">
-              <div className="font-editorial text-[28px]">{profile?.full_name ?? "—"}</div>
-              <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mt-1">
-                {profile?.role === "founder" ? "Fondatore · Metodo P.G.T." : "Coach"}
+          <div className="bg-paper-2 border border-line rounded-[3px] p-5 md:p-6">
+            <div className="flex items-start gap-5 md:gap-6 mb-5 pb-5 border-b border-line">
+              <Avatar initials={profile?.initials ?? "MP"} size={56} tone="ember" />
+              <div className="flex-1 min-w-0">
+                <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mb-1">
+                  {profile?.role === "founder" ? "Fondatore · Metodo P.G.T." : "Coach"}
+                </div>
+                <div className="font-mono text-[13px] text-ink break-all">{profile?.email ?? ""}</div>
               </div>
-              <div className="mt-4 text-[13px]">
-                <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mb-1">Email</div>
-                <div className="font-mono">{profile?.email ?? ""}</div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider mb-1.5 text-smoke">
+                  Nome
+                </div>
+                <input
+                  value={profileNome}
+                  onChange={(e) => setProfileNome(e.target.value)}
+                  className="w-full h-10 px-3 bg-paper border border-line rounded-[2px] text-[13px] focus:outline-none focus:border-ink"
+                />
+              </div>
+              <div>
+                <div className="font-mono text-[10px] uppercase tracking-wider mb-1.5 text-smoke">
+                  Cognome
+                </div>
+                <input
+                  value={profileCognome}
+                  onChange={(e) => setProfileCognome(e.target.value)}
+                  className="w-full h-10 px-3 bg-paper border border-line rounded-[2px] text-[13px] focus:outline-none focus:border-ink"
+                />
+              </div>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={saveCoachProfile}
+                disabled={savingProfile}
+                className="h-10 px-4 rounded-[2px] bg-ink text-paper text-[12px] font-display uppercase tracking-wider hover:bg-ink-2 transition disabled:opacity-50"
+                style={{ fontWeight: 700 }}
+              >
+                {savingProfile ? "Salvo…" : "Salva profilo"}
+              </button>
+            </div>
+
+            <div className="mt-7 pt-5 border-t border-line">
+              <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)] mb-3">
+                Cambia password
+              </div>
+              <p className="text-[12px] text-smoke leading-[1.5] mb-4">
+                Aggiorna la tua password di login. Minimo 8 caratteri.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider mb-1.5 text-smoke">
+                    Nuova password
+                  </div>
+                  <div className="relative">
+                    <input
+                      type={showPwd ? "text" : "password"}
+                      value={pwd}
+                      onChange={(e) => setPwd(e.target.value)}
+                      placeholder="min 8 caratteri"
+                      className="w-full h-10 px-3 pr-12 bg-paper border border-line rounded-[2px] text-[13px] focus:outline-none focus:border-ink"
+                    />
+                    <button
+                      onClick={() => setShowPwd((v) => !v)}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2 text-smoke hover:text-ink text-[10px] font-mono uppercase tracking-wider"
+                    >
+                      {showPwd ? "nascondi" : "mostra"}
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-wider mb-1.5 text-smoke">
+                    Conferma
+                  </div>
+                  <input
+                    type={showPwd ? "text" : "password"}
+                    value={pwdConfirm}
+                    onChange={(e) => setPwdConfirm(e.target.value)}
+                    placeholder="ripeti la nuova password"
+                    className="w-full h-10 px-3 bg-paper border border-line rounded-[2px] text-[13px] focus:outline-none focus:border-ink"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  onClick={saveCoachPassword}
+                  disabled={savingPwd || !pwd || !pwdConfirm}
+                  className="h-10 px-4 rounded-[2px] bg-[var(--ember)] text-white text-[12px] font-display uppercase tracking-wider hover:bg-[var(--ember-2)] transition disabled:opacity-50 inline-flex items-center gap-2"
+                  style={{ fontWeight: 700 }}
+                >
+                  <Icon name="check" size={12} /> {savingPwd ? "Aggiorno…" : "Aggiorna password"}
+                </button>
               </div>
             </div>
           </div>

@@ -353,7 +353,7 @@ export function CoachStudentDetail() {
                 {submissions.map((s) => (
                   <Link
                     key={s.id}
-                    to={s.reviewed ? `/coach/review` : `/coach/review`}
+                    to={`/coach/review/${s.id}`}
                     className="bg-paper-2 border border-line rounded-[3px] p-5 hover:border-ink transition block"
                   >
                     <div className="flex items-center justify-between mb-3">
