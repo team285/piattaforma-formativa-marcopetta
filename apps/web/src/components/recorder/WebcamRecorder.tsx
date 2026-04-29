@@ -14,8 +14,14 @@ import { Icon } from "../ui";
 type RecordState = "idle" | "requesting" | "recording" | "preview" | "denied";
 type Mode = "record" | "upload";
 
+export type SubmissionSource = "webcam" | "upload";
+
 interface WebcamRecorderProps {
-  onSubmit: (blob: Blob, durationSeconds: number) => Promise<void> | void;
+  onSubmit: (
+    blob: Blob,
+    durationSeconds: number,
+    source: SubmissionSource
+  ) => Promise<void> | void;
   uploading?: boolean;
 }
 
@@ -176,7 +182,7 @@ export function WebcamRecorder({ onSubmit, uploading = false }: WebcamRecorderPr
 
   const submit = async () => {
     if (!blobRef.current) return;
-    await onSubmit(blobRef.current, seconds);
+    await onSubmit(blobRef.current, seconds, mode === "upload" ? "upload" : "webcam");
   };
 
   const formatTime = (s: number) => {

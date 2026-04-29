@@ -205,7 +205,7 @@ export function StudentExercise() {
             <div className="md:col-span-7">
               <WebcamRecorder
                 uploading={uploading}
-                onSubmit={async (blob, durationSeconds) => {
+                onSubmit={async (blob, durationSeconds, source) => {
                   if (!profile?.id || !active) return;
                   setUploading(true);
                   try {
@@ -251,7 +251,7 @@ export function StudentExercise() {
                       video_storage_path: path,
                       duration_seconds: durationSeconds,
                       size_bytes: blob.size,
-                      source: "webcam",
+                      source,
                     });
                     if (insertRes.error) {
                       toast(`Salvataggio fallito: ${insertRes.error.message}`, "warn");

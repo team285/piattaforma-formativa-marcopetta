@@ -65,6 +65,7 @@ export function CoachDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!profile?.id) return;
     let cancelled = false;
     const load = async () => {
       const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
@@ -103,7 +104,7 @@ export function CoachDashboard() {
             .from("chat_messages")
             .select("*", { count: "exact", head: true })
             .is("read_at", null)
-            .neq("sender_id", profile?.id ?? ""),
+            .neq("sender_id", profile.id),
           5000,
           { count: 0, error: null } as { count: number | null; error: null },
           "dash.unread"
@@ -139,7 +140,7 @@ export function CoachDashboard() {
   }, [profile?.id]);
 
   const oldestWaiting = queue[0];
-  const firstName = profile?.full_name.split(" ")[0] || "Marco";
+  const firstName = profile?.full_name?.split(" ")[0] || "Marco";
   const todayLabel = new Date().toLocaleDateString("it-IT", {
     weekday: "long",
     day: "numeric",

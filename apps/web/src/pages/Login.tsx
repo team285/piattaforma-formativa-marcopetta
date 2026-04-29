@@ -1,4 +1,5 @@
 import { useState, FormEvent } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 type Mode = "password" | "magiclink";
@@ -169,12 +170,12 @@ export default function Login() {
                 </button>
 
                 <div className="pt-3 border-t border-line-dark text-center space-y-2">
-                  <a
-                    href="/forgot-password"
+                  <Link
+                    to="/forgot-password"
                     className="block text-smoke-2 hover:text-amber font-mono text-xs uppercase tracking-wider"
                   >
                     Password dimenticata? Reset via email
-                  </a>
+                  </Link>
                   <button
                     type="button"
                     onClick={() => {

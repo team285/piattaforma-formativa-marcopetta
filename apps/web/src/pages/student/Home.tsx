@@ -185,7 +185,7 @@ export function StudentHome() {
     };
   }, [profile?.id]);
 
-  const firstName = profile?.full_name.split(" ")[0] ?? "Studente";
+  const firstName = profile?.full_name?.split(" ")[0] ?? "Studente";
   const todayLabel = new Date().toLocaleDateString("it-IT", {
     weekday: "long",
     day: "numeric",

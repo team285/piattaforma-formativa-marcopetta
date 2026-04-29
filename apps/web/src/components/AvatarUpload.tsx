@@ -7,7 +7,7 @@
  * RLS già configurato (avatars write own).
  */
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../lib/auth";
 import { Avatar, Icon, toast } from "./ui";
@@ -28,6 +28,11 @@ export function AvatarUpload({ size = 80, currentUrl, initials, tone = "ember" }
   const [uploading, setUploading] = useState(false);
   const [localUrl, setLocalUrl] = useState<string | null>(currentUrl ?? null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sincronizza localUrl quando currentUrl cambia (es. profile arriva dopo, o cambio via altra tab)
+  useEffect(() => {
+    setLocalUrl(currentUrl ?? null);
+  }, [currentUrl]);
 
   const upload = async (file: File) => {
     if (!profile?.id) return;

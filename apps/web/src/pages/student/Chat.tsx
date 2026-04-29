@@ -101,7 +101,10 @@ export function StudentChat() {
   }
 
   return (
-    <div style={{ background: "#F5F3ED", height: "100vh", display: "flex", flexDirection: "column" }}>
+    <div
+      className="flex flex-col h-[calc(100vh-56px)] md:h-screen"
+      style={{ background: "#F5F3ED" }}
+    >
       <ChatThread
         threadId={thread.id}
         peerId={thread.coach_id}
