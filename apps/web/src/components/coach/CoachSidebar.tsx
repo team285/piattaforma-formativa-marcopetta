@@ -8,13 +8,14 @@
 import { Link, useLocation } from "react-router-dom";
 import { Icon, IconName, Avatar } from "../ui";
 import { useAuth } from "../../lib/auth";
+import { useNotifications } from "../../lib/notifications";
 
 interface NavItem {
   id: string;
   label: string;
   icon: IconName;
   to: string;
-  badge?: string;
+  badgeKey?: "review" | "chat";
 }
 
 const COACH_NAV: NavItem[] = [
@@ -22,14 +23,20 @@ const COACH_NAV: NavItem[] = [
   { id: "students", label: "Studenti", icon: "grid", to: "/coach/studenti" },
   { id: "team", label: "Team coach", icon: "users", to: "/coach/team" },
   { id: "library", label: "Libreria", icon: "book", to: "/coach/libreria" },
-  { id: "review", label: "Da correggere", icon: "inbox", to: "/coach/review" },
-  { id: "chat", label: "Chat", icon: "chat", to: "/coach/chat" },
+  { id: "review", label: "Da correggere", icon: "inbox", to: "/coach/review", badgeKey: "review" },
+  { id: "chat", label: "Chat", icon: "chat", to: "/coach/chat", badgeKey: "chat" },
   { id: "settings", label: "Impostazioni", icon: "settings", to: "/coach/impostazioni" },
 ];
 
 export function CoachSidebar() {
-  const { profile } = useAuth();
+  const { profile, signOut } = useAuth();
   const location = useLocation();
+  const { unreadMessages, pendingReviews } = useNotifications();
+  const badgeForKey = (key?: "review" | "chat") => {
+    if (key === "review") return pendingReviews;
+    if (key === "chat") return unreadMessages;
+    return 0;
+  };
 
   const initials = profile?.initials || "—";
   const fullName = profile?.full_name || "—";
@@ -80,6 +87,7 @@ export function CoachSidebar() {
       <nav className="flex-1 px-3 py-1 space-y-0.5 overflow-y-auto no-scrollbar">
         {COACH_NAV.map((it) => {
           const active = location.pathname.startsWith(it.to);
+          const badgeCount = badgeForKey(it.badgeKey);
           return (
             <Link
               key={it.id}
@@ -93,15 +101,15 @@ export function CoachSidebar() {
               <span className="text-[13px] flex-1" style={active ? { fontWeight: 600 } : {}}>
                 {it.label}
               </span>
-              {it.badge && (
+              {badgeCount > 0 && (
                 <span
                   className={
-                    "text-[10px] font-mono px-1.5 h-5 rounded-full flex items-center " +
-                    (active ? "bg-black/20 text-black" : "bg-[var(--amber)] text-black")
+                    "text-[10px] font-mono px-1.5 min-w-5 h-5 rounded-full flex items-center justify-center " +
+                    (active ? "bg-black/20 text-black" : "bg-[var(--ember)] text-white")
                   }
                   style={{ fontWeight: 700 }}
                 >
-                  {it.badge}
+                  {badgeCount > 99 ? "99+" : badgeCount}
                 </span>
               )}
             </Link>
@@ -109,15 +117,23 @@ export function CoachSidebar() {
         })}
       </nav>
 
-      {/* Footer profilo utente loggato */}
-      <div className="px-4 py-4 border-t border-line-dark flex items-center gap-3">
-        <Avatar initials={initials} size={34} tone="ember" />
-        <div className="flex-1 min-w-0">
-          <div className="text-[13px] truncate">{fullName}</div>
-          <div className="font-mono text-[10px] uppercase tracking-wider text-[#9E8E82]">
-            {roleLabel}
+      {/* Footer profilo utente loggato + logout */}
+      <div className="px-4 py-4 border-t border-line-dark">
+        <div className="flex items-center gap-3 mb-3">
+          <Avatar initials={initials} size={34} tone="ember" />
+          <div className="flex-1 min-w-0">
+            <div className="text-[13px] truncate">{fullName}</div>
+            <div className="font-mono text-[10px] uppercase tracking-wider text-[#9E8E82]">
+              {roleLabel}
+            </div>
           </div>
         </div>
+        <button
+          onClick={signOut}
+          className="w-full h-8 rounded-[2px] border border-line-dark text-[10px] font-mono uppercase tracking-wider text-[#9E8E82] hover:text-paper hover:border-[#4A3A32] transition"
+        >
+          Esci
+        </button>
       </div>
     </aside>
   );

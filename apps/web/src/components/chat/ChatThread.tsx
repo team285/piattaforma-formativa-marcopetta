@@ -13,6 +13,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
+import { useNotifications } from "../../lib/notifications";
 import { Avatar, Icon } from "../ui";
 
 interface Message {
@@ -54,6 +55,7 @@ export function ChatThread({
   meId,
   onBack,
 }: ChatThreadProps) {
+  const { refresh: refreshNotifications } = useNotifications();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -89,6 +91,8 @@ export function ChatThread({
           .update({ read_at: new Date().toISOString() })
           .in("id", unreadIds)
           .is("read_at", null);
+        // Aggiorna i counter sidebar
+        refreshNotifications();
       }
     };
     load();
@@ -116,12 +120,13 @@ export function ChatThread({
             if (cur.some((m) => m.id === newMsg.id)) return cur;
             return [...cur, newMsg];
           });
-          // Se il messaggio non è mio, mark as read
+          // Se il messaggio non è mio, mark as read + aggiorna sidebar counter
           if (newMsg.sender_id !== meId) {
             supabase
               .from("chat_messages")
               .update({ read_at: new Date().toISOString() })
-              .eq("id", newMsg.id);
+              .eq("id", newMsg.id)
+              .then(() => refreshNotifications());
           }
         }
       )
