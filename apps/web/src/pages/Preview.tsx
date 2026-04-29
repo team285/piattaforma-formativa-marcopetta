@@ -17,6 +17,7 @@ import { CoachImpostazioni } from "./coach/Impostazioni";
 import { CoachTeam } from "./coach/Team";
 import { CoachLibreria } from "./coach/Libreria";
 import { CoachReview } from "./coach/Review";
+import { CoachReviewDetail } from "./coach/ReviewDetail";
 import { CoachChat } from "./coach/Chat";
 import { MPToastHost } from "../components/ui";
 
@@ -44,6 +45,7 @@ export default function Preview() {
           <Route path="team" element={<CoachTeam />} />
           <Route path="libreria" element={<CoachLibreria />} />
           <Route path="review" element={<CoachReview />} />
+          <Route path="review/:id" element={<CoachReviewDetail />} />
           <Route path="chat" element={<CoachChat />} />
           <Route path="impostazioni" element={<CoachImpostazioni />} />
 

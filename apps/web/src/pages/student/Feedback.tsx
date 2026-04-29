@@ -1,15 +1,12 @@
 /**
  * Student Feedback — viewer feedback con annotazioni temporali.
  *
- * MVP: legge feedbacks dello studente loggato + annotazioni + ratings,
- * mostra layout dark con video placeholder + lista annotazioni laterale.
- *
- * Player video reale + side-by-side richiedono Storage upload —
- * fase successiva. Per ora mostra timestamp + testo annotazione +
- * radar valutazione.
+ * Carica feedbacks dello studente loggato + annotazioni + ratings.
+ * Player video reale via signed URL del bucket submission-videos.
+ * Click su annotazione → seek video al timestamp.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
@@ -19,22 +16,34 @@ interface FeedbackDetail {
   id: string;
   submission_id: string;
   exercise_title: string;
-  coach_note: string | null;
+  summary: string | null;
   created_at: string;
+  video_storage_path: string | null;
 }
 
 interface Annotation {
   id: string;
-  time_seconds: number;
-  type: "ok" | "tip" | "warning" | "video";
-  text: string;
-  duration_seconds: number | null;
+  at_seconds: number;
+  annotation_type: "ok" | "tip" | "warning" | "video";
+  note: string;
+  video_duration_seconds: number | null;
 }
 
-interface Rating {
-  label: string;
-  value: number;
+interface Ratings {
+  tempo: number;
+  tono: number;
+  tecnica: number;
+  groove: number;
+  espressione: number;
 }
+
+const RATING_LABELS: Array<{ key: keyof Ratings; label: string }> = [
+  { key: "tempo", label: "Tempo" },
+  { key: "tono", label: "Tono" },
+  { key: "tecnica", label: "Tecnica" },
+  { key: "groove", label: "Groove" },
+  { key: "espressione", label: "Espressione" },
+];
 
 const formatSec = (s: number) => {
   const m = Math.floor(s / 60);
@@ -42,7 +51,7 @@ const formatSec = (s: number) => {
   return `${m}:${String(sec).padStart(2, "0")}`;
 };
 
-const annotationColor = (type: Annotation["type"]) => {
+const annotationColor = (type: Annotation["annotation_type"]) => {
   switch (type) {
     case "ok":
       return "#7BB07B";
@@ -55,7 +64,7 @@ const annotationColor = (type: Annotation["type"]) => {
   }
 };
 
-const typeLabel = (type: Annotation["type"]) =>
+const typeLabel = (type: Annotation["annotation_type"]) =>
   ({ ok: "OK", tip: "TIP", warning: "WARN", video: "VIDEO" }[type]);
 
 export function StudentFeedback() {
@@ -64,31 +73,32 @@ export function StudentFeedback() {
   const requestedSub = params.get("sub");
   const [feedback, setFeedback] = useState<FeedbackDetail | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [ratings, setRatings] = useState<Ratings | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     if (!profile?.id) return;
     let cancelled = false;
     const load = async () => {
-      // 1. Trova il feedback più recente dello studente (o quello richiesto)
+      // 1. Trova feedback (specifico o ultimo dello studente)
       const fbQuery = requestedSub
         ? supabase
             .from("feedbacks")
-            .select("id,submission_id,coach_note,created_at")
+            .select("id,submission_id,summary,created_at")
             .eq("submission_id", requestedSub)
             .maybeSingle()
         : supabase
             .from("feedbacks")
-            .select("id,submission_id,coach_note,created_at")
+            .select("id,submission_id,summary,created_at")
             .order("created_at", { ascending: false })
             .limit(1)
             .maybeSingle();
 
       const fbRes = await withTimeout(fbQuery, 5000, { data: null, error: null }, "fb.detail");
       if (cancelled) return;
-
       const fbRow = fbRes.data;
       if (!fbRow) {
         setFeedback(null);
@@ -96,17 +106,23 @@ export function StudentFeedback() {
         return;
       }
 
-      // 2. Risali al titolo esercizio via submission
+      // 2. Submission per video path + exercise_id
       const subRes = await withTimeout(
-        supabase.from("submissions").select("exercise_id").eq("id", fbRow.submission_id).maybeSingle(),
+        supabase
+          .from("submissions")
+          .select("exercise_id,video_storage_path")
+          .eq("id", fbRow.submission_id)
+          .maybeSingle(),
         5000,
-        { data: null as { exercise_id: string } | null, error: null },
+        { data: null as { exercise_id: string; video_storage_path: string } | null, error: null },
         "fb.submission"
       );
       if (cancelled) return;
 
       let exerciseTitle = "—";
+      let videoPath: string | null = null;
       if (subRes.data) {
+        videoPath = subRes.data.video_storage_path;
         const exRes = await withTimeout(
           supabase.from("exercises").select("title").eq("id", subRes.data.exercise_id).maybeSingle(),
           5000,
@@ -121,36 +137,48 @@ export function StudentFeedback() {
         id: fbRow.id,
         submission_id: fbRow.submission_id,
         exercise_title: exerciseTitle,
-        coach_note: fbRow.coach_note,
+        summary: fbRow.summary,
         created_at: fbRow.created_at,
+        video_storage_path: videoPath,
       });
 
-      // 3. Annotazioni
+      // 3. Signed URL per il video (TTL 1 ora)
+      if (videoPath) {
+        const urlRes = await supabase.storage
+          .from("submission-videos")
+          .createSignedUrl(videoPath, 3600);
+        if (!cancelled && urlRes.data?.signedUrl) {
+          setVideoUrl(urlRes.data.signedUrl);
+        }
+      }
+
+      // 4. Annotazioni
       const annRes = await withTimeout(
         supabase
           .from("annotations")
-          .select("id,time_seconds,type,text,duration_seconds")
+          .select("id,at_seconds,annotation_type,note,video_duration_seconds")
           .eq("feedback_id", fbRow.id)
-          .order("time_seconds"),
+          .order("at_seconds"),
         5000,
-        { data: [] as Array<Annotation>, error: null },
+        { data: [] as Annotation[], error: null },
         "fb.annotations"
       );
       if (cancelled) return;
       setAnnotations((annRes.data as Annotation[]) ?? []);
 
-      // 4. Ratings
+      // 5. Ratings (1 row con 5 colonne)
       const ratingsRes = await withTimeout(
         supabase
           .from("feedback_ratings")
-          .select("label,value")
-          .eq("feedback_id", fbRow.id),
+          .select("tempo,tono,tecnica,groove,espressione")
+          .eq("feedback_id", fbRow.id)
+          .maybeSingle(),
         5000,
-        { data: [] as Array<Rating>, error: null },
+        { data: null as Ratings | null, error: null },
         "fb.ratings"
       );
       if (cancelled) return;
-      setRatings((ratingsRes.data as Rating[]) ?? []);
+      setRatings(ratingsRes.data);
       setLoading(false);
     };
     load();
@@ -158,6 +186,14 @@ export function StudentFeedback() {
       cancelled = true;
     };
   }, [profile?.id, requestedSub]);
+
+  const seekTo = (seconds: number, idx: number) => {
+    setActiveIdx(idx);
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
+      videoRef.current.play().catch(() => {});
+    }
+  };
 
   if (loading) {
     return (
@@ -170,11 +206,11 @@ export function StudentFeedback() {
   if (!feedback) {
     return (
       <div className="min-h-full bg-paper fade-in">
-        <div className="max-w-[800px] mx-auto px-12 py-20 text-center">
+        <div className="max-w-[800px] mx-auto px-5 md:px-12 py-20 text-center">
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-3">
             Nessun feedback ancora
           </div>
-          <h1 className="font-editorial text-[44px] mb-4 leading-tight">
+          <h1 className="font-editorial text-[36px] md:text-[44px] mb-4 leading-tight">
             Marco non ti ha ancora <span className="italic-ember">risposto</span>.
           </h1>
           <p className="text-smoke text-[15px] leading-relaxed max-w-md mx-auto mb-8">
@@ -192,8 +228,9 @@ export function StudentFeedback() {
     );
   }
 
-  const current = annotations[activeIdx];
-  const avgRating = ratings.length > 0 ? ratings.reduce((a, r) => a + r.value, 0) / ratings.length : 0;
+  const avgRating = ratings
+    ? (ratings.tempo + ratings.tono + ratings.tecnica + ratings.groove + ratings.espressione) / 5
+    : 0;
   const avgInt = Math.floor(avgRating);
   const avgDec = Math.round((avgRating - avgInt) * 10);
 
@@ -201,7 +238,7 @@ export function StudentFeedback() {
     <div className="min-h-full bg-ink text-paper fade-in">
       <div className="max-w-[1480px] mx-auto px-4 md:px-8 py-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
           <Link
             to="/student/home"
             className="flex items-center gap-2 text-[13px] text-[#8A8A92] hover:text-paper"
@@ -214,75 +251,86 @@ export function StudentFeedback() {
             </div>
             <div className="font-display text-xl">{feedback.exercise_title}</div>
           </div>
-          <div className="w-32" />
+          <div className="hidden md:block w-32" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Video + ratings */}
+          {/* Video + summary + ratings */}
           <div className="md:col-span-8">
             <div
               className="relative bg-black rounded-[3px] overflow-hidden"
               style={{ aspectRatio: "16/9" }}
             >
-              <div className="absolute inset-0 thumb-stripe opacity-40" />
-              <div className="absolute top-3 left-3 font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92]">
-                Tu · take {feedback.submission_id.slice(0, 6)}
-              </div>
-              <div className="absolute inset-0 flex items-center justify-center text-center">
-                <div>
-                  <Icon name="video" size={32} className="text-[#8A8A92] mx-auto mb-3" />
-                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8A8A92]">
-                    Video player · in arrivo
+              {videoUrl ? (
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  controls
+                  playsInline
+                  className="absolute inset-0 w-full h-full"
+                />
+              ) : (
+                <>
+                  <div className="absolute inset-0 thumb-stripe opacity-40" />
+                  <div className="absolute inset-0 flex items-center justify-center text-center">
+                    <div>
+                      <Icon name="video" size={32} className="text-[#8A8A92] mx-auto mb-3" />
+                      <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-[#8A8A92]">
+                        Video non disponibile
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[12px] text-[#6D6D75] mt-2 max-w-xs mx-auto">
-                    Quando avremo lo storage upload attivo, qui partirà il video con timeline annotata.
-                  </div>
-                </div>
-              </div>
+                </>
+              )}
             </div>
 
-            {feedback.coach_note && (
+            {feedback.summary && (
               <div className="mt-5 bg-ink-2 border border-line-dark rounded-[3px] p-5">
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)] mb-2">
                   Nota di Marco
                 </div>
                 <p className="text-[14px] text-[#D9D9DE] leading-[1.5] whitespace-pre-line">
-                  {feedback.coach_note}
+                  {feedback.summary}
                 </p>
               </div>
             )}
 
-            {ratings.length > 0 && (
-              <div className="mt-5 bg-ink-2 border border-line-dark rounded-[3px] p-6">
-                <div className="flex items-center justify-between mb-5">
+            {ratings && (
+              <div className="mt-5 bg-ink-2 border border-line-dark rounded-[3px] p-5 md:p-6">
+                <div className="flex items-start md:items-center justify-between mb-5 gap-4">
                   <div>
                     <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92] mb-1">
                       Valutazione
                     </div>
-                    <div className="font-display text-2xl">
+                    <div className="font-display text-xl md:text-2xl">
                       La <span className="italic-ember">fotografia</span> di questa take
                     </div>
                   </div>
-                  <div className="font-display text-5xl">
+                  <div className="font-display text-4xl md:text-5xl">
                     {avgInt}
-                    <span className="text-[#8A8A92] text-3xl">.{avgDec}</span>
+                    <span className="text-[#8A8A92] text-2xl md:text-3xl">.{avgDec}</span>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
-                  {ratings.map((r) => (
-                    <div key={r.label}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[12px] text-[#C9C9D0]">{r.label}</span>
-                        <span className="font-mono text-[11px] text-paper">{r.value.toFixed(1)}</span>
+                  {RATING_LABELS.map(({ key, label }) => {
+                    const value = ratings[key];
+                    return (
+                      <div key={key}>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-[12px] text-[#C9C9D0]">{label}</span>
+                          <span className="font-mono text-[11px] text-paper">
+                            {value.toFixed(1)}
+                          </span>
+                        </div>
+                        <div className="h-1 rounded-full bg-ink-3 overflow-hidden">
+                          <div
+                            className="h-full bg-[var(--ember)]"
+                            style={{ width: `${value * 20}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="h-1 rounded-full bg-ink-3 overflow-hidden">
-                        <div
-                          className="h-full bg-[var(--ember)]"
-                          style={{ width: `${r.value * 20}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -312,11 +360,11 @@ export function StudentFeedback() {
               <div className="space-y-2 max-h-[620px] overflow-y-auto no-scrollbar pr-2">
                 {annotations.map((a, i) => {
                   const isActive = i === activeIdx;
-                  const color = annotationColor(a.type);
+                  const color = annotationColor(a.annotation_type);
                   return (
                     <button
                       key={a.id}
-                      onClick={() => setActiveIdx(i)}
+                      onClick={() => seekTo(a.at_seconds, i)}
                       className={
                         "w-full text-left rounded-[3px] p-4 border transition " +
                         (isActive
@@ -329,10 +377,10 @@ export function StudentFeedback() {
                           className="font-mono text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-[2px]"
                           style={{ color, background: `${color}22` }}
                         >
-                          {typeLabel(a.type)}
+                          {typeLabel(a.annotation_type)}
                         </span>
                         <span className="font-mono text-[11px] text-[#8A8A92]">
-                          {formatSec(a.time_seconds)}
+                          {formatSec(a.at_seconds)}
                         </span>
                         {isActive && (
                           <span className="ml-auto font-mono text-[10px] text-[var(--ember)]">
@@ -340,7 +388,7 @@ export function StudentFeedback() {
                           </span>
                         )}
                       </div>
-                      <div className="text-[13px] text-[#D9D9DE] leading-[1.55]">{a.text}</div>
+                      <div className="text-[13px] text-[#D9D9DE] leading-[1.55]">{a.note}</div>
                     </button>
                   );
                 })}
@@ -363,12 +411,6 @@ export function StudentFeedback() {
                 Scrivi a Marco in chat
               </Link>
             </div>
-
-            {current && annotations.length > 0 && (
-              <div className="mt-3 text-[11px] font-mono text-[#6D6D75] text-center">
-                attivo: <span className="text-[var(--ember)]">{formatSec(current.time_seconds)}</span>
-              </div>
-            )}
           </div>
         </div>
       </div>
