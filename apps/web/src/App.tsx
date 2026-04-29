@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
 import Home from "./pages/Home";
 import Preview from "./pages/Preview";
+import Student from "./pages/Student";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
@@ -50,8 +51,8 @@ function RoleGate() {
     return <Navigate to="/coach/dashboard" replace />;
   }
 
-  // student → iframe (porting student views in arrivo)
-  return <Home />;
+  // student → vista nativa TSX
+  return <Navigate to="/student/home" replace />;
 }
 
 function RedirectIfAuth({ children }: { children: React.ReactNode }) {
@@ -91,6 +92,14 @@ export default function App() {
             element={
               <RequireAuth>
                 <Preview />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/student/*"
+            element={
+              <RequireAuth>
+                <Student />
               </RequireAuth>
             }
           />
