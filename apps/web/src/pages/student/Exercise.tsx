@@ -10,10 +10,11 @@
  */
 
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { EditorialH, EmberButton, Icon, StatusPill, Tag, toast } from "../../components/ui";
+import { EditorialH, Icon, StatusPill, Tag, toast } from "../../components/ui";
+import { WebcamRecorder } from "../../components/recorder/WebcamRecorder";
 
 interface ExerciseDetail {
   id: string;
@@ -35,11 +36,13 @@ interface SubmissionRow {
 
 export function StudentExercise() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const requestedId = params.get("ex");
   const [active, setActive] = useState<ExerciseDetail | null>(null);
   const [history, setHistory] = useState<SubmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -198,42 +201,71 @@ export function StudentExercise() {
               )}
             </div>
 
-            {/* Area registrazione (placeholder) */}
+            {/* Area registrazione */}
             <div className="md:col-span-7">
-              <div
-                className="relative bg-ink rounded-[3px] overflow-hidden"
-                style={{ aspectRatio: "16/9" }}
-              >
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-paper text-center px-8">
-                  <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92] mb-5">
-                    Registrazione webcam · in arrivo
-                  </div>
-                  <div className="font-display text-3xl mb-4">
-                    Quando sei <span className="italic-ember">pronto</span>, premi il cerchio.
-                  </div>
-                  <button
-                    onClick={() => toast("Webcam recording · arriva con la prossima sessione", "info")}
-                    className="w-20 h-20 rounded-full bg-[var(--ember)] flex items-center justify-center hover:scale-105 transition"
-                  >
-                    <div className="w-6 h-6 bg-white rounded-full" />
-                  </button>
-                  <div className="text-[11px] uppercase tracking-wider font-mono text-[#8A8A92] mt-4">
-                    upload manuale .mp4/.mov disponibile presto
-                  </div>
-                </div>
-              </div>
+              <WebcamRecorder
+                uploading={uploading}
+                onSubmit={async (blob, durationSeconds) => {
+                  if (!profile?.id || !active) return;
+                  setUploading(true);
+                  try {
+                    // Calcola take_number progressivo per questo esercizio
+                    const { count } = await supabase
+                      .from("submissions")
+                      .select("*", { count: "exact", head: true })
+                      .eq("exercise_id", active.id);
+                    const takeNumber = (count ?? 0) + 1;
 
-              <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                <div className="text-[12px] text-smoke">
-                  Marco riceve una notifica quando invii. Risponde di solito entro 24h.
-                </div>
-                <EmberButton
-                  size="lg"
-                  icon="send"
-                  onClick={() => toast("Recording + upload · prossima sessione", "info")}
-                >
-                  Invia a Marco
-                </EmberButton>
+                    const ext = blob.type.includes("mp4") ? "mp4" : "webm";
+                    const path = `${profile.id}/${active.id}/take_${takeNumber}.${ext}`;
+
+                    const uploadRes = await supabase.storage
+                      .from("submission-videos")
+                      .upload(path, blob, {
+                        contentType: blob.type || "video/webm",
+                        upsert: false,
+                      });
+                    if (uploadRes.error) {
+                      toast(`Upload fallito: ${uploadRes.error.message}`, "warn");
+                      setUploading(false);
+                      return;
+                    }
+
+                    // Insert submission
+                    const insertRes = await supabase.from("submissions").insert({
+                      exercise_id: active.id,
+                      student_id: profile.id,
+                      take_number: takeNumber,
+                      video_storage_path: path,
+                      duration_seconds: durationSeconds,
+                      size_bytes: blob.size,
+                      source: "webcam",
+                    });
+                    if (insertRes.error) {
+                      toast(`Salvataggio fallito: ${insertRes.error.message}`, "warn");
+                      setUploading(false);
+                      return;
+                    }
+
+                    // Aggiorna status esercizio
+                    await supabase
+                      .from("exercises")
+                      .update({ status: "submitted" })
+                      .eq("id", active.id);
+
+                    toast("Take inviato a Marco", "ok");
+                    setUploading(false);
+                    setTimeout(() => navigate("/student/home"), 600);
+                  } catch (e) {
+                    console.warn("[exercise] upload error:", e);
+                    toast("Errore di rete durante l'upload", "warn");
+                    setUploading(false);
+                  }
+                }}
+              />
+
+              <div className="mt-5 text-[12px] text-smoke text-center md:text-left">
+                Marco riceve una notifica quando invii. Risponde di solito entro 24h.
               </div>
             </div>
           </div>

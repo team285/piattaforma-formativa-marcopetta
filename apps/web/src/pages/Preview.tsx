@@ -12,6 +12,7 @@ import { CoachSidebar } from "../components/coach/CoachSidebar";
 import { MobileNav, MobileNavItem } from "../components/MobileNav";
 import { CoachDashboard } from "./coach/Dashboard";
 import { CoachStudenti } from "./coach/Studenti";
+import { CoachStudentDetail } from "./coach/StudentDetail";
 import { CoachImpostazioni } from "./coach/Impostazioni";
 import { CoachTeam } from "./coach/Team";
 import { CoachLibreria } from "./coach/Libreria";
@@ -39,6 +40,7 @@ export default function Preview() {
           {/* Mount canonical: /coach/* */}
           <Route path="dashboard" element={<CoachDashboard />} />
           <Route path="studenti" element={<CoachStudenti />} />
+          <Route path="studenti/:id" element={<CoachStudentDetail />} />
           <Route path="team" element={<CoachTeam />} />
           <Route path="libreria" element={<CoachLibreria />} />
           <Route path="review" element={<CoachReview />} />
