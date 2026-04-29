@@ -165,14 +165,14 @@ export function CoachImpostazioni() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1280px] mx-auto px-10 py-10">
+      <div className="max-w-[1280px] mx-auto px-5 md:px-10 py-8 md:py-10">
         {/* Header */}
-        <div className="flex items-end justify-between pb-6 border-b border-line mb-10">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-5 md:pb-6 border-b border-line mb-8 md:mb-10">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-2">
               Impostazioni
             </div>
-            <h1 className="font-editorial text-[56px]">
+            <h1 className="font-editorial text-[36px] md:text-[56px] leading-[1.05]">
               Gestisci <span className="italic-ember">la tua scuola</span>.
             </h1>
             <div className="text-[14px] text-smoke mt-3 max-w-[560px]">
@@ -286,7 +286,7 @@ export function CoachImpostazioni() {
             </div>
           ) : (
             <div className="bg-paper-2 border border-line rounded-[3px] overflow-hidden">
-              <div className="grid grid-cols-[1.2fr_1.4fr_0.9fr_auto] gap-4 items-center px-5 py-3 border-b border-line bg-paper">
+              <div className="hidden md:grid grid-cols-[1.2fr_1.4fr_0.9fr_auto] gap-4 items-center px-5 py-3 border-b border-line bg-paper">
                 <div className="font-mono text-[10px] uppercase tracking-wider text-smoke">Studente</div>
                 <div className="font-mono text-[10px] uppercase tracking-wider text-smoke">Email</div>
                 <div className="font-mono text-[10px] uppercase tracking-wider text-smoke">Coach</div>
@@ -295,24 +295,30 @@ export function CoachImpostazioni() {
               {filtered.map((s) => (
                 <div
                   key={s.id}
-                  className="grid grid-cols-[1.2fr_1.4fr_0.9fr_auto] gap-4 items-center px-5 py-4 border-b border-line last:border-b-0 hover:bg-paper transition"
+                  className="flex flex-col md:grid md:grid-cols-[1.2fr_1.4fr_0.9fr_auto] gap-3 md:gap-4 md:items-center px-4 md:px-5 py-4 border-b border-line last:border-b-0 hover:bg-paper transition"
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <Avatar initials={s.initials} size={36} tone="ink" />
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="text-[14px] truncate">{s.full_name}</div>
                       <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mt-0.5">
                         {s.level}
                       </div>
                     </div>
+                    <button
+                      onClick={() => setEditing(s)}
+                      className="md:hidden h-8 px-3 rounded-[2px] border border-line text-[11px] text-smoke hover:border-ink hover:text-ink transition font-mono uppercase tracking-wider inline-flex items-center gap-1.5 flex-shrink-0"
+                    >
+                      <Icon name="pencil" size={11} />
+                    </button>
                   </div>
-                  <div className="text-[12px] truncate font-mono text-smoke">{s.email}</div>
-                  <div className="text-[12px] truncate text-smoke">
+                  <div className="text-[12px] truncate font-mono text-smoke md:block hidden">{s.email}</div>
+                  <div className="text-[12px] truncate text-smoke md:block hidden">
                     {s.coach_name?.split(" ")[0] ?? "—"}
                   </div>
                   <button
                     onClick={() => setEditing(s)}
-                    className="h-8 px-3 rounded-[2px] border border-line text-[11px] text-smoke hover:border-ink hover:text-ink transition font-mono uppercase tracking-wider inline-flex items-center gap-1.5"
+                    className="hidden md:inline-flex h-8 px-3 rounded-[2px] border border-line text-[11px] text-smoke hover:border-ink hover:text-ink transition font-mono uppercase tracking-wider items-center gap-1.5"
                   >
                     <Icon name="pencil" size={11} /> Modifica
                   </button>

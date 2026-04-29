@@ -148,18 +148,18 @@ export function CoachDashboard() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1280px] mx-auto px-10 py-10">
+      <div className="max-w-[1280px] mx-auto px-5 md:px-10 py-8 md:py-10">
         {/* Hero */}
-        <div className="flex items-end justify-between mb-10">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-10">
           <div>
             <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-smoke mb-3">
               {todayLabel}
             </div>
-            <h1 className="font-editorial text-[56px]">
+            <h1 className="font-editorial text-[36px] md:text-[56px] leading-[1.05]">
               Buongiorno <span className="italic-ember">{firstName}</span>.
             </h1>
           </div>
-          <div className="text-right text-sm text-smoke max-w-[300px]">
+          <div className="md:text-right text-sm text-smoke md:max-w-[300px]">
             {kpi.toReview > 0 ? (
               <>
                 <span className="text-ink">
@@ -187,7 +187,7 @@ export function CoachDashboard() {
         <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-3">
           Oggi
         </div>
-        <div className="grid grid-cols-4 gap-4 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-10 md:mb-12">
           <StatCard
             label="Attivi questa settimana"
             value={loading ? "—" : kpi.activeStudents}

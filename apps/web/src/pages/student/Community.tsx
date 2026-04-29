@@ -13,13 +13,13 @@ import { EmberButton, Icon } from "../../components/ui";
 export function StudentCommunity() {
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1180px] mx-auto px-12 py-12">
-        <div className="flex items-end justify-between mb-10">
+      <div className="max-w-[1180px] mx-auto px-5 md:px-12 py-8 md:py-12">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-10">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-smoke mb-5">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-smoke mb-3 md:mb-5">
               Hub · in arrivo
             </div>
-            <h1 className="font-editorial text-[60px] max-w-[720px] leading-[1.02]">
+            <h1 className="font-editorial text-[36px] md:text-[60px] max-w-[720px] leading-[1.05]">
               <span className="italic-ember">Ascoltatevi</span>
               <br />
               tra di voi.
@@ -37,13 +37,13 @@ export function StudentCommunity() {
         </div>
 
         {/* Teaser editoriale */}
-        <div className="bg-ink text-paper rounded-[3px] p-8 mb-12 relative overflow-hidden">
+        <div className="bg-ink text-paper rounded-[3px] p-5 md:p-8 mb-10 md:mb-12 relative overflow-hidden">
           <div
             className="absolute -right-20 -bottom-20 w-80 h-80 rounded-full"
             style={{ background: "radial-gradient(circle, rgba(242,183,68,0.25), transparent 60%)" }}
           />
-          <div className="relative grid grid-cols-12 gap-8 items-center">
-            <div className="col-span-7">
+          <div className="relative grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 md:items-center">
+            <div className="md:col-span-7">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)] mb-3 flex items-center gap-2">
                 <Icon name="star" size={11} /> pick della settimana · scelta da marco
               </div>
@@ -53,7 +53,7 @@ export function StudentCommunity() {
               </div>
               <div className="text-[13px] text-[#C9C9D0] mt-4">— Marco Petta</div>
             </div>
-            <div className="col-span-5">
+            <div className="md:col-span-5">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92] mb-2">
                 Quando arriva
               </div>
@@ -66,7 +66,7 @@ export function StudentCommunity() {
         </div>
 
         {/* 4 features placeholder */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             {
               t: "Take pubbliche",

@@ -127,15 +127,15 @@ export function CoachTeam() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1280px] mx-auto px-10 py-10">
-        <div className="flex items-end justify-between pb-6 border-b border-line mb-8">
+      <div className="max-w-[1280px] mx-auto px-5 md:px-10 py-8 md:py-10">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-5 md:pb-6 border-b border-line mb-8">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-2">
               {loading
                 ? "Caricamento…"
                 : `${team.length} ${team.length === 1 ? "coach attivo" : "coach attivi"} · ${studentsTotal} studenti totali`}
             </div>
-            <h1 className="font-editorial text-[56px]">
+            <h1 className="font-editorial text-[36px] md:text-[56px] leading-[1.05]">
               Il tuo <span className="italic-ember">team</span>.
             </h1>
             <div className="text-[14px] text-smoke mt-3 max-w-[520px]">
@@ -169,7 +169,7 @@ export function CoachTeam() {
         )}
 
         {team.length > 0 && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {team.map((c) => {
               const fill = Math.min(100, Math.round((c.students_count / c.max_students) * 100));
               const full = c.students_count >= c.max_students;

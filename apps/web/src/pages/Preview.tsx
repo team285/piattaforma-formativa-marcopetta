@@ -9,6 +9,7 @@
 
 import { Routes, Route, Navigate } from "react-router-dom";
 import { CoachSidebar } from "../components/coach/CoachSidebar";
+import { MobileNav, MobileNavItem } from "../components/MobileNav";
 import { CoachDashboard } from "./coach/Dashboard";
 import { CoachStudenti } from "./coach/Studenti";
 import { CoachImpostazioni } from "./coach/Impostazioni";
@@ -18,9 +19,20 @@ import { CoachReview } from "./coach/Review";
 import { CoachChat } from "./coach/Chat";
 import { MPToastHost } from "../components/ui";
 
+const COACH_NAV_MOBILE: MobileNavItem[] = [
+  { id: "dashboard", label: "Overview", icon: "home", to: "/coach/dashboard" },
+  { id: "students", label: "Studenti", icon: "grid", to: "/coach/studenti" },
+  { id: "team", label: "Team coach", icon: "users", to: "/coach/team" },
+  { id: "library", label: "Libreria", icon: "book", to: "/coach/libreria" },
+  { id: "review", label: "Da correggere", icon: "inbox", to: "/coach/review" },
+  { id: "chat", label: "Chat", icon: "chat", to: "/coach/chat" },
+  { id: "settings", label: "Impostazioni", icon: "settings", to: "/coach/impostazioni" },
+];
+
 export default function Preview() {
   return (
-    <div className="flex min-h-screen bg-paper">
+    <div className="flex flex-col md:flex-row min-h-screen bg-paper">
+      <MobileNav nav={COACH_NAV_MOBILE} variant="coach" />
       <CoachSidebar />
       <main className="flex-1 min-w-0">
         <Routes>

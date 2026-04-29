@@ -31,7 +31,7 @@ export function StudentSidebar() {
   const fullName = profile?.full_name || "—";
 
   return (
-    <aside className="w-[248px] bg-ink text-paper flex flex-col border-r border-line-dark min-h-screen">
+    <aside className="hidden md:flex w-[248px] bg-ink text-paper flex-col border-r border-line-dark min-h-screen">
       {/* Brand top */}
       <div className="px-5 pt-6 pb-5 border-b border-line-dark">
         <div className="flex items-center gap-3">

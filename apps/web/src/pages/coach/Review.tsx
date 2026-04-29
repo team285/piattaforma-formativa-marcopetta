@@ -56,7 +56,7 @@ export function CoachReview() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1400px] mx-auto px-10 py-10">
+      <div className="max-w-[1400px] mx-auto px-5 md:px-10 py-8 md:py-10">
         <div className="flex items-end justify-between mb-8">
           <EditorialH kicker="Da correggere">
             Coda video <span className="italic-ember">in attesa</span>

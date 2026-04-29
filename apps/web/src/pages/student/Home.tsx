@@ -128,14 +128,14 @@ export function StudentHome() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1180px] mx-auto px-12 py-14">
+      <div className="max-w-[1180px] mx-auto px-5 md:px-12 py-8 md:py-14">
         {/* Hero */}
-        <div className="flex items-start justify-between mb-12">
+        <div className="flex flex-col md:flex-row items-start md:justify-between gap-4 mb-8 md:mb-12">
           <div>
-            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-smoke mb-5">
+            <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-smoke mb-3 md:mb-5">
               {todayLabel}
             </div>
-            <h1 className="font-editorial text-[64px] max-w-[780px] leading-[1.02]">
+            <h1 className="font-editorial text-[36px] md:text-[64px] max-w-[780px] leading-[1.05] md:leading-[1.02]">
               Ciao {firstName}. Ecco cosa <span className="italic-ember">senti</span>
               <br />
               questa <span className="italic-ember">settimana</span>.
@@ -158,13 +158,13 @@ export function StudentHome() {
 
         {/* Card percorso attivo */}
         {path?.path_label ? (
-          <div className="bg-ink text-paper rounded-[3px] p-8 mb-14 relative overflow-hidden">
+          <div className="bg-ink text-paper rounded-[3px] p-5 md:p-8 mb-10 md:mb-14 relative overflow-hidden">
             <div
               className="absolute -right-24 -top-24 w-80 h-80 rounded-full"
               style={{ background: "radial-gradient(circle, rgba(242,183,68,0.25), transparent 60%)" }}
             />
-            <div className="relative grid grid-cols-12 gap-8">
-              <div className="col-span-5">
+            <div className="relative grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+              <div className="md:col-span-5">
                 <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92] mb-3">
                   Percorso attivo
                 </div>
@@ -174,7 +174,7 @@ export function StudentHome() {
                 </div>
               </div>
               {path.path_end_date && (
-                <div className="col-span-3">
+                <div className="md:col-span-3">
                   <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92] mb-3">
                     Attivo fino al
                   </div>
@@ -190,7 +190,7 @@ export function StudentHome() {
                   )}
                 </div>
               )}
-              <div className="col-span-4">
+              <div className="md:col-span-4">
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92]">
                     Avanzamento
@@ -239,7 +239,7 @@ export function StudentHome() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
               {exercises.map((ex) => (
                 <Link
                   key={ex.id}

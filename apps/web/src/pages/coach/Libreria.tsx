@@ -102,7 +102,7 @@ export function CoachLibreria() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1400px] mx-auto px-10 py-8">
+      <div className="max-w-[1400px] mx-auto px-5 md:px-10 py-6 md:py-8">
         <div className="flex items-end justify-between mb-2">
           <EditorialH kicker="La tua libreria">
             L'<span className="italic-ember">IP</span> di Marco
@@ -142,7 +142,7 @@ export function CoachLibreria() {
                 {c.modules.map((m) => (
                   <div key={m.id} className="mb-4">
                     <div className="font-display text-[18px] mb-2">{m.title}</div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {m.lessons.map((l) => (
                         <div
                           key={l.id}

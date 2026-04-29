@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
-import { Avatar, toast } from "../../components/ui";
+import { Avatar, Icon, toast } from "../../components/ui";
 
 interface ThreadRow {
   id: string;
@@ -116,7 +116,12 @@ export function CoachChat() {
 
   return (
     <div className="flex h-screen bg-paper">
-      <div className="w-[340px] flex-shrink-0 bg-paper-2 border-r border-line flex flex-col">
+      <div
+        className={
+          "w-full md:w-[340px] flex-shrink-0 bg-paper-2 border-r border-line flex-col " +
+          (activeId ? "hidden md:flex" : "flex")
+        }
+      >
         <div className="px-5 py-5 border-b border-line">
           <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-1.5">
             conversazioni
@@ -150,10 +155,17 @@ export function CoachChat() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col">
+      <div className={"flex-1 flex-col " + (active ? "flex" : "hidden md:flex")}>
         {active ? (
           <>
-            <div className="px-7 py-4 border-b border-line bg-paper-2 flex items-center gap-3">
+            <div className="px-4 md:px-7 py-4 border-b border-line bg-paper-2 flex items-center gap-3">
+              <button
+                onClick={() => setActiveId(null)}
+                aria-label="Torna a inbox"
+                className="md:hidden w-8 h-8 -ml-1 flex items-center justify-center text-smoke"
+              >
+                <Icon name="chevronl" size={14} />
+              </button>
               <Avatar initials={active.student_initials} size={42} tone="ember" />
               <div className="flex-1 min-w-0">
                 <div className="font-display text-[20px] truncate">{active.student_name}</div>

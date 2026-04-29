@@ -146,7 +146,7 @@ export function StudentExercise() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1180px] mx-auto px-12 py-12">
+      <div className="max-w-[1180px] mx-auto px-5 md:px-12 py-8 md:py-12">
         <Link
           to="/student/home"
           className="flex items-center gap-2 text-[13px] text-smoke hover:text-ink mb-8"
@@ -167,11 +167,11 @@ export function StudentExercise() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-12 gap-10">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10">
             {/* Istruzioni esercizio */}
-            <div className="col-span-5">
+            <div className="md:col-span-5">
               <Tag>Esercizio · {active.id.slice(0, 6).toUpperCase()}</Tag>
-              <h1 className="font-display text-[44px] leading-[1.05] mt-4 mb-5">{active.title}</h1>
+              <h1 className="font-display text-[32px] md:text-[44px] leading-[1.05] mt-4 mb-5">{active.title}</h1>
 
               <div className="flex items-center gap-4 mb-8 text-sm">
                 {dueLabel && (
@@ -199,7 +199,7 @@ export function StudentExercise() {
             </div>
 
             {/* Area registrazione (placeholder) */}
-            <div className="col-span-7">
+            <div className="md:col-span-7">
               <div
                 className="relative bg-ink rounded-[3px] overflow-hidden"
                 style={{ aspectRatio: "16/9" }}
@@ -223,7 +223,7 @@ export function StudentExercise() {
                 </div>
               </div>
 
-              <div className="mt-5 flex items-center justify-between">
+              <div className="mt-5 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div className="text-[12px] text-smoke">
                   Marco riceve una notifica quando invii. Risponde di solito entro 24h.
                 </div>
@@ -245,7 +245,7 @@ export function StudentExercise() {
             <EditorialH kicker="Le tue submissions precedenti">
               Tutto quello che hai <span className="italic-ember">mandato</span> finora.
             </EditorialH>
-            <div className="mt-6 grid grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {history.map((s) => (
                 <button
                   key={s.id}

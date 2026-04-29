@@ -180,13 +180,13 @@ export function CoachStudenti() {
 
   return (
     <div className="min-h-full bg-paper fade-in">
-      <div className="max-w-[1400px] mx-auto px-10 py-8">
-        <div className="flex items-end justify-between pb-6 border-b border-line">
+      <div className="max-w-[1400px] mx-auto px-5 md:px-10 py-6 md:py-8">
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-5 md:pb-6 border-b border-line">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-2">
               {loading ? "Caricamento…" : `${students.length} studenti totali · ${flaggedCount} richiedono attenzione`}
             </div>
-            <h1 className="font-editorial text-[52px]">
+            <h1 className="font-editorial text-[36px] md:text-[52px] leading-[1.05]">
               I tuoi <span className="italic-ember">studenti</span>.
             </h1>
           </div>
@@ -276,7 +276,7 @@ export function CoachStudenti() {
         )}
 
         {filtered.length > 0 && (
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filtered.map((s) => (
               <Link
                 key={s.id}

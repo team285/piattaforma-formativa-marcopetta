@@ -199,7 +199,7 @@ export function StudentFeedback() {
 
   return (
     <div className="min-h-full bg-ink text-paper fade-in">
-      <div className="max-w-[1480px] mx-auto px-8 py-6">
+      <div className="max-w-[1480px] mx-auto px-4 md:px-8 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <Link
@@ -217,9 +217,9 @@ export function StudentFeedback() {
           <div className="w-32" />
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           {/* Video + ratings */}
-          <div className="col-span-8">
+          <div className="md:col-span-8">
             <div
               className="relative bg-black rounded-[3px] overflow-hidden"
               style={{ aspectRatio: "16/9" }}
@@ -268,7 +268,7 @@ export function StudentFeedback() {
                     <span className="text-[#8A8A92] text-3xl">.{avgDec}</span>
                   </div>
                 </div>
-                <div className="grid grid-cols-5 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6">
                   {ratings.map((r) => (
                     <div key={r.label}>
                       <div className="flex items-center justify-between mb-1.5">
@@ -289,7 +289,7 @@ export function StudentFeedback() {
           </div>
 
           {/* Lista annotazioni */}
-          <div className="col-span-4">
+          <div className="md:col-span-4">
             <div className="flex items-center justify-between mb-3">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[#8A8A92]">
                 Commenti al secondo
