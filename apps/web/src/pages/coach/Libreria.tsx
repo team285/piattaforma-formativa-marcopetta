@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
+import { usePageTitle } from "../../lib/hooks";
 import { EditorialH, EmberButton, Icon, Tag, Thumb, toast } from "../../components/ui";
 
 interface Lesson {
@@ -33,6 +34,7 @@ const formatDuration = (s: number | null) => {
 };
 
 export function CoachLibreria() {
+  usePageTitle("Libreria");
   const [tree, setTree] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
 

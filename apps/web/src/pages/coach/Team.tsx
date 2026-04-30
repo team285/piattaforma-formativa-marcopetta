@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
+import { usePageTitle } from "../../lib/hooks";
 import { Avatar, EmberButton, Icon, Tag, toast } from "../../components/ui";
 
 interface CoachRow {
@@ -28,6 +29,7 @@ interface CoachRow {
 }
 
 export function CoachTeam() {
+  usePageTitle("Team coach");
   const [team, setTeam] = useState<CoachRow[]>([]);
   const [loading, setLoading] = useState(true);
 

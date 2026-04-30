@@ -16,6 +16,7 @@ import { useAuth } from "../../lib/auth";
 import { Avatar, Icon, toast } from "../../components/ui";
 import { NotificationsPermission } from "../../components/NotificationsPermission";
 import { AvatarUpload } from "../../components/AvatarUpload";
+import { useBodyScrollLock, usePageTitle } from "../../lib/hooks";
 
 interface StudentRow {
   id: string;
@@ -42,6 +43,7 @@ function generateTempPassword(): string {
 }
 
 export function CoachImpostazioni() {
+  usePageTitle("Impostazioni");
   const { profile, refreshProfile } = useAuth();
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [coaches, setCoaches] = useState<CoachOption[]>([]);
@@ -522,6 +524,8 @@ function EditStudentDrawer({
   const [cognome, setCognome] = useState("");
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  useBodyScrollLock(true);
 
   useEffect(() => {
     const parts = student.full_name.split(" ");

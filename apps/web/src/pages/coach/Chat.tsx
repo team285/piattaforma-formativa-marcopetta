@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { Avatar } from "../../components/ui";
 import { ChatThread } from "../../components/chat/ChatThread";
 
@@ -26,6 +27,7 @@ interface ThreadRow {
 }
 
 export function CoachChat() {
+  usePageTitle("Chat");
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [threads, setThreads] = useState<ThreadRow[]>([]);

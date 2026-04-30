@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { ChatThread } from "../../components/chat/ChatThread";
 
 interface ThreadInfo {
@@ -16,6 +17,7 @@ interface ThreadInfo {
 }
 
 export function StudentChat() {
+  usePageTitle("Chat con Marco");
   const { profile } = useAuth();
   const [thread, setThread] = useState<ThreadInfo | null>(null);
   const [loading, setLoading] = useState(true);

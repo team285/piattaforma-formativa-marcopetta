@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { useBodyScrollLock, usePageTitle } from "../../lib/hooks";
 import { Avatar, EmberButton, Icon, StatusPill, Tag, toast } from "../../components/ui";
 
 interface StudentInfo {
@@ -49,6 +50,7 @@ export function CoachStudentDetail() {
   const { id } = useParams<{ id: string }>();
   const { profile } = useAuth();
   const [student, setStudent] = useState<StudentInfo | null>(null);
+  usePageTitle(student?.full_name ?? "Studente");
   const [exercises, setExercises] = useState<ExerciseRow[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
   const [tab, setTab] = useState<Tab>("exercises");
@@ -426,6 +428,8 @@ function AssignExerciseDrawer({
     return d.toISOString().slice(0, 10);
   });
   const [submitting, setSubmitting] = useState(false);
+
+  useBodyScrollLock(true);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

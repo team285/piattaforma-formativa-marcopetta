@@ -48,6 +48,18 @@ export function AvatarUpload({ size = 80, currentUrl, initials, tone = "ember" }
     const ext = file.type.split("/")[1] === "jpeg" ? "jpg" : file.type.split("/")[1];
     const path = `${profile.id}/avatar.${ext}`;
 
+    // Pulisci file vecchi nello stesso folder dell'utente per evitare orfani
+    // (es. avatar.jpg vecchio quando si carica avatar.png nuovo).
+    const listRes = await supabase.storage.from("avatars").list(profile.id);
+    if (!listRes.error && listRes.data && listRes.data.length > 0) {
+      const oldPaths = listRes.data
+        .map((f) => `${profile.id}/${f.name}`)
+        .filter((p) => p !== path);
+      if (oldPaths.length > 0) {
+        await supabase.storage.from("avatars").remove(oldPaths);
+      }
+    }
+
     // Upload con upsert (sostituisce se esiste già)
     const upRes = await supabase.storage
       .from("avatars")

@@ -10,6 +10,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { Icon, EmberButton } from "../../components/ui";
 
 interface FeedbackDetail {
@@ -68,6 +69,7 @@ const typeLabel = (type: Annotation["annotation_type"]) =>
   ({ ok: "OK", tip: "TIP", warning: "WARN", video: "VIDEO" }[type]);
 
 export function StudentFeedback() {
+  usePageTitle("Feedback");
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();

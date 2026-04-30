@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { EditorialH, Icon, Tag, Thumb, toast } from "../../components/ui";
 
 interface Lesson {
@@ -31,6 +32,7 @@ const formatDuration = (s: number | null) => {
 };
 
 export function StudentLesson() {
+  usePageTitle("Lezioni");
   const { profile } = useAuth();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [bookmarkedIds, setBookmarkedIds] = useState<Set<string>>(new Set());

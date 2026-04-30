@@ -11,9 +11,10 @@
  *  - Style WhatsApp tema Marco Petta (paper/amber)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useNotifications } from "../../lib/notifications";
+import { useTabVisibility } from "../../lib/hooks";
 import { Avatar, Icon } from "../ui";
 
 interface Message {
@@ -64,44 +65,43 @@ export function ChatThread({
   const [loading, setLoading] = useState(true);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
-  // Load messaggi quando cambia threadId
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    const load = async () => {
-      const msgsRes = await withTimeout(
-        supabase
-          .from("chat_messages")
-          .select("id,thread_id,sender_id,body,created_at")
-          .eq("thread_id", threadId)
-          .order("created_at"),
-        5000,
-        { data: [] as Message[], error: null },
-        "thread.messages"
-      );
-      if (cancelled) return;
-      setMessages((msgsRes.data as Message[]) ?? []);
-      setLoading(false);
+  // Load messaggi (estratto in callback per riusare anche su tab-back)
+  const loadMessages = useCallback(async () => {
+    const msgsRes = await withTimeout(
+      supabase
+        .from("chat_messages")
+        .select("id,thread_id,sender_id,body,created_at")
+        .eq("thread_id", threadId)
+        .order("created_at"),
+      5000,
+      { data: [] as Message[], error: null },
+      "thread.messages"
+    );
+    setMessages((msgsRes.data as Message[]) ?? []);
+    setLoading(false);
 
-      // Mark messages as read (i messaggi del peer)
-      const unreadIds = ((msgsRes.data as Message[]) ?? [])
-        .filter((m) => m.sender_id !== meId)
-        .map((m) => m.id);
-      if (unreadIds.length > 0) {
-        await supabase
-          .from("chat_messages")
-          .update({ read_at: new Date().toISOString() })
-          .in("id", unreadIds)
-          .is("read_at", null);
-        // Aggiorna i counter sidebar
-        refreshNotifications();
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [threadId, meId]);
+    const unreadIds = ((msgsRes.data as Message[]) ?? [])
+      .filter((m) => m.sender_id !== meId)
+      .map((m) => m.id);
+    if (unreadIds.length > 0) {
+      await supabase
+        .from("chat_messages")
+        .update({ read_at: new Date().toISOString() })
+        .in("id", unreadIds)
+        .is("read_at", null);
+      refreshNotifications();
+    }
+  }, [threadId, meId, refreshNotifications]);
+
+  useEffect(() => {
+    setLoading(true);
+    loadMessages();
+  }, [loadMessages]);
+
+  // Quando l'utente torna sul tab dopo che era in background, ricarica i
+  // messaggi (Realtime potrebbe aver perso eventi se la connessione si era
+  // chiusa per inattività del browser).
+  useTabVisibility(loadMessages);
 
   // Realtime subscription
   useEffect(() => {

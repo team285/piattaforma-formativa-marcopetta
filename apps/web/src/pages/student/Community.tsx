@@ -9,8 +9,10 @@
 
 import { Link } from "react-router-dom";
 import { EmberButton, Icon } from "../../components/ui";
+import { usePageTitle } from "../../lib/hooks";
 
 export function StudentCommunity() {
+  usePageTitle("Community");
   return (
     <div className="min-h-full bg-paper fade-in">
       <div className="max-w-[1180px] mx-auto px-5 md:px-12 py-8 md:py-12">

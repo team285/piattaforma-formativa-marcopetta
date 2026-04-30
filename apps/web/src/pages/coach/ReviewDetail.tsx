@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { Avatar, EmberButton, Icon, Tag, toast } from "../../components/ui";
 
 /**
@@ -90,6 +91,7 @@ export function CoachReviewDetail() {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const [info, setInfo] = useState<SubmissionInfo | null>(null);
+  usePageTitle(info ? `Review: ${info.student_name}` : "Review");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);

@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
+import { usePageTitle } from "../../lib/hooks";
 import { Avatar, EditorialH, Icon, Tag, Thumb } from "../../components/ui";
 
 interface QueueItem {
@@ -32,6 +33,7 @@ const formatWaiting = (h: number) => {
 };
 
 export function CoachReview() {
+  usePageTitle("Da correggere");
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [loading, setLoading] = useState(true);
 

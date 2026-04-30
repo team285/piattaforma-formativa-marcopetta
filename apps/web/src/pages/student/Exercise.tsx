@@ -13,6 +13,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { EditorialH, Icon, StatusPill, Tag, toast } from "../../components/ui";
 import { WebcamRecorder } from "../../components/recorder/WebcamRecorder";
 
@@ -35,6 +36,7 @@ interface SubmissionRow {
 }
 
 export function StudentExercise() {
+  usePageTitle("Esercizio");
   const { profile } = useAuth();
   const navigate = useNavigate();
   const [params] = useSearchParams();

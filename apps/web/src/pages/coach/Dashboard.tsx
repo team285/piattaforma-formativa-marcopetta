@@ -18,6 +18,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { Avatar, EditorialH, Icon, StatCard, Tag, Thumb } from "../../components/ui";
 
 interface DashboardKpis {
@@ -53,6 +54,7 @@ const formatWaiting = (hours: number) => {
 };
 
 export function CoachDashboard() {
+  usePageTitle("Dashboard");
   const { profile } = useAuth();
   const [kpi, setKpi] = useState<DashboardKpis>({
     activeStudents: 0,

@@ -11,6 +11,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
+import { useBodyScrollLock, usePageTitle } from "../../lib/hooks";
 import { Avatar, EmberButton, Icon, toast } from "../../components/ui";
 
 interface StudentRow {
@@ -33,6 +34,7 @@ interface CoachOption {
 }
 
 export function CoachStudenti() {
+  usePageTitle("Studenti");
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [coaches, setCoaches] = useState<CoachOption[]>([]);
   const [search, setSearch] = useState("");
@@ -389,6 +391,9 @@ function InviteStudentDrawer({
   const toggleGenre = (g: string) => {
     setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]));
   };
+
+  // Lock body scroll mentre drawer aperto
+  useBodyScrollLock(true);
 
   // ESC chiude (consistente con altri drawer)
   useEffect(() => {

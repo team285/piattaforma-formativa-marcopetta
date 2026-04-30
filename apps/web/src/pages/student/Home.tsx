@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
+import { usePageTitle } from "../../lib/hooks";
 import { EditorialH, StatusPill, Tag, Icon } from "../../components/ui";
 
 interface ExerciseRow {
@@ -45,6 +46,7 @@ interface RatingsAvg {
 }
 
 export function StudentHome() {
+  usePageTitle("Il tuo piano");
   const { profile } = useAuth();
   const [path, setPath] = useState<PathInfo | null>(null);
   const [exercises, setExercises] = useState<ExerciseRow[]>([]);

@@ -21,6 +21,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "./supabase";
 import { useAuth } from "./auth";
+import { useTabVisibility } from "./hooks";
 import { toast } from "../components/ui";
 
 // ─── Browser Notifications ──────────────────────────────────────────
@@ -155,6 +156,12 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profile?.id, profile?.role]);
+
+  // Quando l'utente torna su un tab dopo che era in background, refetch:
+  // Realtime potrebbe aver perso eventi se il client era sospeso.
+  useTabVisibility(() => {
+    if (profile?.id) refresh();
+  });
 
   // Realtime subscriptions
   useEffect(() => {

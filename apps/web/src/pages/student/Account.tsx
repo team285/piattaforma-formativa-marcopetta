@@ -16,6 +16,7 @@ import { useAuth } from "../../lib/auth";
 import { Icon, toast } from "../../components/ui";
 import { NotificationsPermission } from "../../components/NotificationsPermission";
 import { AvatarUpload } from "../../components/AvatarUpload";
+import { usePageTitle } from "../../lib/hooks";
 
 function deriveInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -23,6 +24,7 @@ function deriveInitials(name: string): string {
 }
 
 export function StudentAccount() {
+  usePageTitle("Account");
   const { profile, refreshProfile } = useAuth();
   const [nome, setNome] = useState("");
   const [cognome, setCognome] = useState("");
