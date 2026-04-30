@@ -4,7 +4,7 @@
  * MVP: vista "in arrivo" con teaser editoriale. La community richiede
  * uno schema dedicato (community_posts, post_reactions, post_comments)
  * che non è ancora migrato. Lo aggiungeremo in una fase successiva
- * quando Marco avrà più di un manciata di studenti attivi.
+ * quando Marco avrà più di una manciata di studenti attivi.
  */
 
 import { Link } from "react-router-dom";
@@ -47,7 +47,7 @@ export function StudentCommunity() {
           <div className="relative grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 md:items-center">
             <div className="md:col-span-7">
               <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-[var(--ember)] mb-3 flex items-center gap-2">
-                <Icon name="star" size={11} /> pick della settimana · scelta da marco
+                <Icon name="star" size={11} /> pick della settimana · scelta da Marco
               </div>
               <div className="font-display text-3xl leading-tight mb-2">
                 "Quando saremo in <span className="italic-ember">venti</span>, qui ci sarà la take del

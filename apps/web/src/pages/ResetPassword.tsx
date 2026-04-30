@@ -10,7 +10,7 @@
  *  6. (qui) → form per impostare nuova password
  *  7. updateUser({ password }) → redirect home
  *
- * Quando questa pagina è raggiunta direttamente, l'utente è gia' loggato
+ * Quando questa pagina è raggiunta direttamente, l'utente è già loggato
  * con un token di recovery. Se nessuna sessione, mostriamo errore.
  */
 

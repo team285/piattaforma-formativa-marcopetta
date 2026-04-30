@@ -21,7 +21,7 @@ export const supabase = createClient(url, anonKey, {
 /**
  * withTimeout — wrappa una promise (es. una query Supabase) con un timeout.
  * Se la promise non risolve entro `ms`, restituisce `fallbackValue`.
- * Cosi' le viste non si bloccano in "Caricamento..." infinito se la rete è
+ * Così le viste non si bloccano in "Caricamento..." infinito se la rete è
  * lenta o la query ha un errore di sintassi PostgREST.
  */
 export async function withTimeout<T, F>(

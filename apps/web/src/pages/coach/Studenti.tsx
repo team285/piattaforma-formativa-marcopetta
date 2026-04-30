@@ -3,7 +3,7 @@
  *
  * Strategia query: niente nested join PostgREST (fragili con FK custom),
  * usiamo query separate + lookup via .in() + Map. Ogni query è wrappata
- * in withTimeout cosi' la UI non si blocca mai su "Caricamento…" infinito.
+ * in withTimeout così la UI non si blocca mai su "Caricamento…" infinito.
  *
  * RLS-safe: founder vede tutti, coach vede solo i propri assegnati.
  */
@@ -186,7 +186,9 @@ export function CoachStudenti() {
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-5 md:pb-6 border-b border-line">
           <div>
             <div className="font-mono text-[10px] uppercase tracking-[0.22em] text-smoke mb-2">
-              {loading ? "Caricamento…" : `${students.length} studenti totali · ${flaggedCount} richiedono attenzione`}
+              {loading
+                ? "Caricamento…"
+                : `${students.length} ${students.length === 1 ? "studente totale" : "studenti totali"} · ${flaggedCount} ${flaggedCount === 1 ? "richiede" : "richiedono"} attenzione`}
             </div>
             <h1 className="font-editorial text-[36px] md:text-[52px] leading-[1.05]">
               I tuoi <span className="italic-ember">studenti</span>.
@@ -456,7 +458,7 @@ function InviteStudentDrawer({
       // Sicurezza: la password generata non è recuperabile dopo questa
       // chiusura. Forza Marco a confermare di averla copiata/comunicata.
       const confirmed = window.confirm(
-        "Non hai ancora copiato la password. Una volta chiuso questo drawer, la password non sarà più recuperabile (Marco dovrà rigenerarla).\n\nChiudi comunque?"
+        "Non hai ancora copiato la password. Una volta chiuso questo drawer la password non sarà più recuperabile — dovrai rigenerarla dalle impostazioni.\n\nChiudi comunque?"
       );
       if (!confirmed) return;
     }
@@ -689,8 +691,8 @@ function InviteStudentDrawer({
               </div>
               <div className="font-mono text-[16px] text-ink select-all">{tempPwd}</div>
               <div className="text-[12px] text-smoke mt-2 leading-[1.4]">
-                Generata casualmente. Verrà mostrata in chiaro dopo la creazione cosi' la potrai
-                comunicare allo studente.
+                Generata casualmente. Verrà mostrata in chiaro dopo la creazione così potrai
+                comunicarla allo studente.
               </div>
             </div>
           </div>

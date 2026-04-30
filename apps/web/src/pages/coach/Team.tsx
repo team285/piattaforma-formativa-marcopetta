@@ -2,7 +2,7 @@
  * Coach Team — porting nativo (coach_team.jsx) connesso al DB.
  *
  * Mostra grid dei coach del team. Strategia query: niente nested join,
- * query separate + .in() + Map. withTimeout su tutto cosi' la UI non
+ * query separate + .in() + Map. withTimeout su tutto così la UI non
  * si blocca su "Caricamento…" infinito.
  */
 

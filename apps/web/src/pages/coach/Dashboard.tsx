@@ -148,6 +148,10 @@ export function CoachDashboard() {
     day: "numeric",
     month: "long",
   });
+  // Saluto time-aware (mattina/pomeriggio/sera)
+  const hour = new Date().getHours();
+  const greeting =
+    hour < 12 ? "Buongiorno" : hour < 18 ? "Buon pomeriggio" : "Buonasera";
 
   return (
     <div className="min-h-full bg-paper fade-in">
@@ -159,15 +163,13 @@ export function CoachDashboard() {
               {todayLabel}
             </div>
             <h1 className="font-editorial text-[36px] md:text-[56px] leading-[1.05]">
-              Buongiorno <span className="italic-ember">{firstName}</span>.
+              {greeting} <span className="italic-ember">{firstName}</span>.
             </h1>
           </div>
           <div className="md:text-right text-sm text-smoke md:max-w-[300px]">
             {kpi.toReview > 0 ? (
               <>
-                <span className="text-ink">
-                  {kpi.toReview} {kpi.toReview === 1 ? "video" : "video"}
-                </span>{" "}
+                <span className="text-ink">{kpi.toReview} video</span>{" "}
                 {kpi.toReview === 1 ? "ti aspetta" : "ti aspettano"}.
                 {oldestWaiting && (
                   <>
@@ -194,7 +196,7 @@ export function CoachDashboard() {
           <StatCard
             label="Attivi questa settimana"
             value={loading ? "—" : kpi.activeStudents}
-            sub={`su ${kpi.studentsTotal} studenti totali`}
+            sub={`su ${kpi.studentsTotal} ${kpi.studentsTotal === 1 ? "studente totale" : "studenti totali"}`}
           />
           <StatCard
             label="Video da correggere"

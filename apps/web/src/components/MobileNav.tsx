@@ -5,7 +5,7 @@
  * con la sidebar. Sopra md è hidden — la sidebar fissa torna in vista.
  *
  * Generic: accetta `nav` (lista voci) + `branding` + `footer` come props
- * cosi' va bene per coach e student. Title della pagina passato via
+ * così va bene per coach e student. Title della pagina passato via
  * `title` (mostrato in topbar).
  */
 

@@ -273,7 +273,9 @@ export function StudentHome() {
                     })}
                   </div>
                   {daysLeft !== null && (
-                    <div className="text-sm text-[#C9C9D0]">— {daysLeft} giorni residui</div>
+                    <div className="text-sm text-[#C9C9D0]">
+                      — {daysLeft} {daysLeft === 1 ? "giorno residuo" : "giorni residui"}
+                    </div>
                   )}
                 </div>
               )}

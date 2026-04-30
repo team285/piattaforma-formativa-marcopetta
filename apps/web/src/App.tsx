@@ -48,7 +48,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 /**
  * RoleGate — sceglie l'home a seconda del ruolo:
  *  - coach / founder → vista nativa TSX (Preview / sidebar)
- *  - student         → iframe del prototipo (finche' non portiamo le student views)
+ *  - student         → iframe del prototipo (finché non portiamo le student views)
  *
  * Dev users (Luca) possono forzare l'iframe via /iframe per testare.
  */
