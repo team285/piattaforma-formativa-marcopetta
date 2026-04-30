@@ -196,10 +196,16 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         }
       );
     } else {
+      // Lo studente vede il feedback solo quando status='sent' (RLS).
+      // Marco fa INSERT con status='draft' poi UPDATE a 'sent' → l'evento che
+      // arriva allo studente via realtime è l'UPDATE (l'INSERT è bloccato da RLS).
       channel.on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "feedbacks" },
-        () => {
+        { event: "UPDATE", schema: "public", table: "feedbacks" },
+        (payload) => {
+          const fb = payload.new as { status: string };
+          // Solo quando il feedback diventa "sent" (Marco lo pubblica)
+          if (fb.status !== "sent") return;
           if (!locationRef.current.includes("/student/feedback")) {
             toast("Nuovo feedback da Marco", "ok");
             showBrowserNotification("Nuovo feedback", "Marco ha appena risposto a una tua take.");

@@ -293,11 +293,16 @@ export function StudentExercise() {
               {history.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() =>
-                    s.reviewed
-                      ? (window.location.href = `/student/feedback?sub=${s.id}`)
-                      : toast(`Take ${s.take_number} · ${s.exercise_title} · in attesa di Marco`, "info")
-                  }
+                  onClick={() => {
+                    if (s.reviewed) {
+                      navigate(`/student/feedback?sub=${s.id}`);
+                    } else {
+                      toast(
+                        `Take ${s.take_number} · ${s.exercise_title} · in attesa di Marco`,
+                        "info"
+                      );
+                    }
+                  }}
                   className="text-left bg-paper-2 border border-line rounded-[3px] p-5 hover:border-ink transition"
                 >
                   <div className="flex items-center justify-between mb-3">

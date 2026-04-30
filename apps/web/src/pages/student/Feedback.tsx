@@ -7,7 +7,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Icon, EmberButton } from "../../components/ui";
@@ -69,6 +69,7 @@ const typeLabel = (type: Annotation["annotation_type"]) =>
 
 export function StudentFeedback() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const [params] = useSearchParams();
   const requestedSub = params.get("sub");
   const [feedback, setFeedback] = useState<FeedbackDetail | null>(null);
@@ -400,7 +401,7 @@ export function StudentFeedback() {
                 full
                 size="lg"
                 icon="record"
-                onClick={() => (window.location.href = "/student/esercizio")}
+                onClick={() => navigate("/student/esercizio")}
               >
                 Rispondi con nuovo video
               </EmberButton>

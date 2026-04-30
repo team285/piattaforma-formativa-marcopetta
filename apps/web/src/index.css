@@ -55,4 +55,119 @@
     line-height: 0.9;
     text-transform: uppercase;
   }
+
+  /* italic-ember: parola enfatizzata nei titoli editorial (italic + colore amber) */
+  .italic-ember {
+    font-style: italic;
+    color: var(--amber);
+  }
+
+  /* Animazioni di entrata pagine + drawer */
+  .fade-in {
+    animation: mp-fade-in 0.3s ease-out;
+  }
+
+  .slide-up {
+    animation: mp-slide-up 0.32s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+
+  /* Hide scrollbar (sidebar, drawer, lista chat) */
+  .no-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Stripe diagonale per video placeholder (tema dark) */
+  .thumb-stripe {
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(20, 20, 23, 1) 0,
+      rgba(20, 20, 23, 1) 12px,
+      rgba(29, 29, 34, 1) 12px,
+      rgba(29, 29, 34, 1) 24px
+    );
+  }
+  .thumb-stripe-light {
+    background-image: repeating-linear-gradient(
+      135deg,
+      rgba(232, 223, 204, 1) 0,
+      rgba(232, 223, 204, 1) 12px,
+      rgba(216, 210, 196, 1) 12px,
+      rgba(216, 210, 196, 1) 24px
+    );
+  }
+
+  /* Grain texture su sfondi dark (feedback viewer) */
+  .grain-dark {
+    background-image: radial-gradient(
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px
+    );
+    background-size: 3px 3px;
+  }
+
+  /* Pulse animato del bottone REC (registrazione) */
+  .rec-pulse {
+    animation: mp-rec-pulse 1.4s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(214, 56, 41, 0.55);
+  }
+
+  /* Marker dot in StatusPill */
+  .marquee-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 99px;
+    display: inline-block;
+  }
+
+  /* Bottone "gradient-amber" tone EmberButton */
+  .gradient-amber {
+    background: linear-gradient(135deg, var(--amber) 0%, var(--amber-2) 100%);
+  }
+}
+
+@layer utilities {
+  /* Keyframes globali (drawer fadeIn + entrate pagine) */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes mp-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes mp-slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes mp-rec-pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(214, 56, 41, 0.55);
+    }
+    70% {
+      box-shadow: 0 0 0 14px rgba(214, 56, 41, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(214, 56, 41, 0);
+    }
+  }
 }

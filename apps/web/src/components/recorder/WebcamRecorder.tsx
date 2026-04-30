@@ -45,12 +45,18 @@ export function WebcamRecorder({ onSubmit, uploading = false }: WebcamRecorderPr
   const previewVideoRef = useRef<HTMLVideoElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const intervalRef = useRef<number | null>(null);
+  // Ref sempre aggiornato a previewUrl, per cleanup all'unmount (la closure
+  // dell'effect vuoto avrebbe catturato solo il valore initial = null).
+  const previewUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    previewUrlRef.current = previewUrl;
+  }, [previewUrl]);
 
   useEffect(() => {
     return () => {
       stopStream();
       if (intervalRef.current) window.clearInterval(intervalRef.current);
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
