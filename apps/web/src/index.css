@@ -36,6 +36,28 @@
     background: var(--amber);
     color: var(--ink);
   }
+
+  /* A11y: focus visibile per chi naviga con tastiera. Non appare al click
+     mouse (focus-visible distingue keyboard vs mouse). */
+  button:focus-visible,
+  a:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Disabled state globale: cursor not-allowed su qualsiasi button/a */
+  button:disabled,
+  a[aria-disabled="true"],
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    cursor: not-allowed;
+  }
 }
 
 @layer components {

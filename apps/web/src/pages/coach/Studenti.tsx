@@ -213,7 +213,11 @@ export function CoachStudenti() {
               className="flex-1 bg-transparent outline-none text-[13px] text-ink placeholder:text-smoke"
             />
             {search && (
-              <button onClick={() => setSearch("")} className="text-smoke hover:text-ink">
+              <button
+                onClick={() => setSearch("")}
+                aria-label="Pulisci ricerca"
+                className="text-smoke hover:text-ink"
+              >
                 <Icon name="x" size={13} />
               </button>
             )}
