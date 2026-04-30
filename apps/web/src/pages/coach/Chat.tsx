@@ -157,7 +157,7 @@ export function CoachChat() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-56px)] md:h-screen bg-paper">
+    <div className="flex h-chat-mobile bg-paper">
       {/* Inbox */}
       <div
         className={

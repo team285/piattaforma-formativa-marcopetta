@@ -197,12 +197,14 @@ export function StudentAccount() {
               <div className="relative">
                 <input
                   type={showPwd ? "text" : "password"}
+                  autoComplete="new-password"
                   value={pwd}
                   onChange={(e) => setPwd(e.target.value)}
                   placeholder="min 8 caratteri"
                   className="w-full h-10 px-3 pr-12 bg-paper border border-line rounded-[2px] text-[13px] focus:outline-none focus:border-ink"
                 />
                 <button
+                  type="button"
                   onClick={() => setShowPwd((v) => !v)}
                   className="absolute right-2 top-1/2 -translate-y-1/2 h-7 px-2 text-smoke hover:text-ink text-[10px] font-mono uppercase tracking-wider"
                 >
@@ -217,6 +219,7 @@ export function StudentAccount() {
               </div>
               <input
                 type={showPwd ? "text" : "password"}
+                autoComplete="new-password"
                 value={pwdConfirm}
                 onChange={(e) => setPwdConfirm(e.target.value)}
                 placeholder="ripeti la nuova password"

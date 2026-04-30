@@ -29,6 +29,7 @@ export function Avatar({
         width={size}
         height={size}
         loading="lazy"
+        decoding="async"
         className={
           "object-cover rounded-full bg-[var(--ink-3)] " +
           (ring ? "ring-2 ring-offset-2 ring-[var(--amber)] ring-offset-[var(--ink)]" : "")

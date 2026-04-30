@@ -120,6 +120,7 @@ export default function Login() {
                   <input
                     id="email"
                     type="email"
+                    autoComplete="username"
                     required
                     autoFocus
                     value={email}
@@ -140,6 +141,7 @@ export default function Login() {
                     <input
                       id="password"
                       type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -201,6 +203,7 @@ export default function Login() {
                   <input
                     id="email-magic"
                     type="email"
+                    autoComplete="email"
                     required
                     autoFocus
                     value={email}

@@ -122,11 +122,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     init();
 
-    // Subscribe a cambi sessione
+    // Subscribe a cambi sessione. Reload del profile SOLO per eventi che
+    // implicano cambio utente, NON per TOKEN_REFRESHED (avviene automatico
+    // ~ogni 50min e ricaricare profile sarebbe una query inutile).
     const { data: subscription } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event, newSession) => {
         if (!mounted) return;
         setSession(newSession);
+        if (event === "TOKEN_REFRESHED") return; // stessa user, profile invariato
         if (newSession?.user) {
           const p = await loadProfile(newSession.user.id);
           if (mounted) setProfile(p);

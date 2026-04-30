@@ -149,6 +149,30 @@
   .gradient-amber {
     background: linear-gradient(135deg, var(--amber) 0%, var(--amber-2) 100%);
   }
+
+  /* Full-height fix per iOS Safari: 100vh include la browser chrome che si
+     nasconde scrollando, tagliando il contenuto. dvh = dynamic viewport
+     height, sempre allineato alla viewport visibile. Fallback vh per
+     browser pre-2022. */
+  .h-screen-safe {
+    height: 100vh;
+    height: 100dvh;
+  }
+  .min-h-screen-safe {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  /* Coach Chat / Student Chat: mobile sotto topbar 56px, desktop full */
+  .h-chat-mobile {
+    height: calc(100vh - 56px);
+    height: calc(100dvh - 56px);
+  }
+  @media (min-width: 768px) {
+    .h-chat-mobile {
+      height: 100vh;
+      height: 100dvh;
+    }
+  }
 }
 
 @layer utilities {

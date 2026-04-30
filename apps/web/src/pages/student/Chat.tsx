@@ -104,7 +104,7 @@ export function StudentChat() {
 
   return (
     <div
-      className="flex flex-col h-[calc(100vh-56px)] md:h-screen"
+      className="flex flex-col h-chat-mobile"
       style={{ background: "#F5F3ED" }}
     >
       <ChatThread

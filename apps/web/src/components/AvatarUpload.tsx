@@ -105,6 +105,8 @@ export function AvatarUpload({ size = 80, currentUrl, initials, tone = "ember" }
           alt="Avatar"
           width={size}
           height={size}
+          loading="lazy"
+          decoding="async"
           className="rounded-full object-cover bg-paper-2 border border-line"
           style={{ width: size, height: size }}
         />
