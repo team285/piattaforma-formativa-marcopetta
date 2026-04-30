@@ -390,6 +390,15 @@ function InviteStudentDrawer({
     setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]));
   };
 
+  // ESC chiude (consistente con altri drawer)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") (created ? onCreated : onClose)();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, onCreated, created]);
+
   const submit = async () => {
     if (!nome.trim() || !cognome.trim()) {
       toast("Nome e cognome richiesti", "warn");
@@ -461,6 +470,7 @@ function InviteStudentDrawer({
             </div>
             <button
               onClick={close}
+              aria-label="Chiudi"
               className="w-9 h-9 rounded-full border border-line flex items-center justify-center text-smoke hover:text-ink hover:border-ink transition flex-shrink-0"
             >
               <Icon name="x" size={14} />

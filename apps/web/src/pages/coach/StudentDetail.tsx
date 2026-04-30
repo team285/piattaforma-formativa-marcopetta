@@ -477,6 +477,7 @@ function AssignExerciseDrawer({
             </div>
             <button
               onClick={onClose}
+              aria-label="Chiudi"
               className="w-9 h-9 rounded-full border border-line flex items-center justify-center text-smoke hover:text-ink hover:border-ink transition flex-shrink-0"
             >
               <Icon name="x" size={14} />

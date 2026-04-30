@@ -16,6 +16,23 @@ import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
 import { Avatar, EmberButton, Icon, Tag, toast } from "../../components/ui";
 
+/**
+ * Promise wrapper: assicura che ensureFeedback() venga chiamata in serie,
+ * non in parallelo. Senza questo, click rapidi su "+ Annota" producono due
+ * INSERT su feedbacks → UNIQUE constraint violation (submission_id è unique).
+ */
+function useSerialPromise<T>(): (factory: () => Promise<T>) => Promise<T> {
+  const inFlight = useRef<Promise<T> | null>(null);
+  return (factory) => {
+    if (inFlight.current) return inFlight.current;
+    const p = factory().finally(() => {
+      inFlight.current = null;
+    });
+    inFlight.current = p;
+    return p;
+  };
+}
+
 interface SubmissionInfo {
   id: string;
   exercise_id: string;
@@ -76,8 +93,14 @@ export function CoachReviewDetail() {
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
+  const feedbackIdRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const runSerial = useSerialPromise<string | null>();
+  // Sincronizza ref con state (per uso nelle closure async senza stale)
+  useEffect(() => {
+    feedbackIdRef.current = feedbackId;
+  }, [feedbackId]);
 
   // Form state
   const [annoType, setAnnoType] = useState<AnnoType>("tip");
@@ -245,26 +268,50 @@ export function CoachReviewDetail() {
     };
   }, [submissionId]);
 
-  const ensureFeedback = async (): Promise<string | null> => {
-    if (feedbackId) return feedbackId;
-    if (!profile?.id || !submissionId) return null;
-    const { data, error } = await supabase
-      .from("feedbacks")
-      .insert({
-        submission_id: submissionId,
-        coach_id: profile.id,
-        summary: summary.trim() || null,
-        status: "draft",
-      })
-      .select("id")
-      .single();
-    if (error) {
-      toast(`Errore creazione feedback: ${error.message}`, "warn");
-      return null;
-    }
-    setFeedbackId(data.id);
-    return data.id;
-  };
+  const ensureFeedback = (): Promise<string | null> =>
+    runSerial(async () => {
+      // Read latest from ref (non state stale)
+      if (feedbackIdRef.current) return feedbackIdRef.current;
+      if (!profile?.id || !submissionId) return null;
+
+      // Tentativo 1: INSERT. Se UNIQUE viola (race con altro tab), facciamo SELECT.
+      const insertRes = await supabase
+        .from("feedbacks")
+        .insert({
+          submission_id: submissionId,
+          coach_id: profile.id,
+          summary: summary.trim() || null,
+          status: "draft",
+        })
+        .select("id")
+        .maybeSingle();
+
+      if (insertRes.error) {
+        // 23505 = unique violation: il feedback è stato creato altrove
+        const code = (insertRes.error as { code?: string }).code;
+        if (code === "23505") {
+          const existing = await supabase
+            .from("feedbacks")
+            .select("id")
+            .eq("submission_id", submissionId)
+            .maybeSingle();
+          if (existing.data) {
+            setFeedbackId(existing.data.id);
+            feedbackIdRef.current = existing.data.id;
+            return existing.data.id;
+          }
+        }
+        toast(`Errore creazione feedback: ${insertRes.error.message}`, "warn");
+        return null;
+      }
+
+      const id = insertRes.data?.id ?? null;
+      if (id) {
+        setFeedbackId(id);
+        feedbackIdRef.current = id;
+      }
+      return id;
+    });
 
   const addAnnotation = async () => {
     if (!annoNote.trim() || !videoRef.current) return;
@@ -359,6 +406,33 @@ export function CoachReviewDetail() {
     setPublishing(false);
     toast("Feedback pubblicato. Lo studente lo vede ora.", "ok");
     setTimeout(() => navigate("/coach/review"), 700);
+  };
+
+  const discardDraft = async () => {
+    if (!feedbackId) {
+      // Niente da scartare, torna indietro
+      navigate("/coach/review");
+      return;
+    }
+    if (alreadyReviewed) {
+      // Non si scarta un feedback già pubblicato
+      navigate("/coach/review");
+      return;
+    }
+    const ok = window.confirm(
+      "Scartare il draft? Le annotazioni e la nota non saranno salvate. La take torna in coda."
+    );
+    if (!ok) return;
+    setPublishing(true);
+    // Cascade su feedbacks elimina anche annotations e feedback_ratings
+    const { error } = await supabase.from("feedbacks").delete().eq("id", feedbackId);
+    setPublishing(false);
+    if (error) {
+      toast(`Errore: ${error.message}`, "warn");
+      return;
+    }
+    toast("Draft scartato. La take torna in coda.", "info");
+    setTimeout(() => navigate("/coach/review"), 500);
   };
 
   if (loading) {
@@ -553,7 +627,16 @@ export function CoachReviewDetail() {
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex flex-col md:flex-row md:items-center md:justify-end gap-3">
+              {feedbackId && !alreadyReviewed && (
+                <button
+                  onClick={discardDraft}
+                  disabled={publishing}
+                  className="h-10 px-4 rounded-[2px] border border-line-dark text-[12px] font-mono uppercase tracking-wider text-[#9A9AA2] hover:text-paper hover:border-[#4A3A32] transition disabled:opacity-50"
+                >
+                  Scarta draft
+                </button>
+              )}
               <EmberButton
                 size="lg"
                 icon="send"

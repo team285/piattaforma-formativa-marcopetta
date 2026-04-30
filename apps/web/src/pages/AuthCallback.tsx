@@ -18,15 +18,28 @@ export default function AuthCallback() {
       return;
     }
 
-    // Subscribe a cambi auth: appena la session è pronta naviga a home.
-    // Lasciamo che il client gestisca il code exchange automaticamente
-    // (detectSessionInUrl: true) per evitare race condition con il lock.
+    // type=recovery → flusso reset password (link da resetPasswordForEmail).
+    // Quando il client processa la sessione, l'utente è "loggato" con un token
+    // di recovery, ma deve impostare una nuova password prima di proseguire.
+    // Cerchiamo il flag sia in query string che in hash (Supabase può usare
+    // entrambi a seconda del flowType).
+    const isRecovery =
+      url.searchParams.get("type") === "recovery" ||
+      window.location.hash.includes("type=recovery");
+
+    // Subscribe a cambi auth: appena la session è pronta naviga.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (cancelled) return;
+      if (event === "PASSWORD_RECOVERY" && session) {
+        cancelled = true;
+        sub.subscription.unsubscribe();
+        navigate("/auth/reset-password", { replace: true });
+        return;
+      }
       if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) {
         cancelled = true;
         sub.subscription.unsubscribe();
-        navigate("/", { replace: true });
+        navigate(isRecovery ? "/auth/reset-password" : "/", { replace: true });
       }
     });
 
@@ -43,7 +56,7 @@ export default function AuthCallback() {
       if (data.session) {
         cancelled = true;
         sub.subscription.unsubscribe();
-        navigate("/", { replace: true });
+        navigate(isRecovery ? "/auth/reset-password" : "/", { replace: true });
         return;
       }
 

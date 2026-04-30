@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./lib/auth";
 import { NotificationsProvider } from "./lib/notifications";
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import AuthCallback from "./pages/AuthCallback";
 import Home from "./pages/Home";
 import Preview from "./pages/Preview";
@@ -99,6 +100,7 @@ export default function App() {
             }
           />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
           <Route
             path="/coach/*"
             element={
