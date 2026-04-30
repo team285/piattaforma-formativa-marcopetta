@@ -17,7 +17,7 @@
  *  - coach/founder: chat_messages (in propri thread), submissions (nuove take)
  */
 
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { supabase } from "./supabase";
 import { useAuth } from "./auth";
@@ -97,17 +97,20 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     getBrowserPermission()
   );
 
-  const requestPermission = async () => {
+  const requestPermission = useCallback(async () => {
     const result = await requestBrowserPermission();
     setBrowserPermission(result);
-  };
+  }, []);
 
-  const refresh = async () => {
+  // Memoizzato: cambia solo se profile.id/role cambiano. Senza memo, ad ogni
+  // render del provider (es. counter update) tutti i consumer del context
+  // riceverebbero un nuovo `refresh` e i loro useEffect su [refresh] si
+  // ri-eseguirebbero (listener thrashing, query duplicate).
+  const refresh = useCallback(async () => {
     if (!profile?.id) return;
 
     const isCoach = profile.role === "coach" || profile.role === "founder";
 
-    // 1. Unread chat messages (sender != me, read_at null) — RLS filtra ai propri thread
     const unreadRes = await supabase
       .from("chat_messages")
       .select("*", { count: "exact", head: true })
@@ -119,13 +122,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     let pendingExercises = 0;
 
     if (isCoach) {
-      // Submissions senza feedback (review_queue) — RLS filtra ai propri studenti
       const reviewRes = await supabase
         .from("review_queue")
         .select("*", { count: "exact", head: true });
       pendingReviews = reviewRes.count ?? 0;
     } else {
-      // Studente: esercizi assegnati pending
       const exRes = await supabase
         .from("exercises")
         .select("*", { count: "exact", head: true })
@@ -133,7 +134,6 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
         .eq("status", "assigned");
       pendingExercises = exRes.count ?? 0;
 
-      // Feedback "reviewed" non ancora aperti — proxy: count exercises status='reviewed'
       const fbRes = await supabase
         .from("exercises")
         .select("*", { count: "exact", head: true })
@@ -148,7 +148,7 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       newFeedback,
       pendingExercises,
     });
-  };
+  }, [profile?.id, profile?.role]);
 
   // Initial fetch + cambio profilo
   useEffect(() => {

@@ -65,18 +65,29 @@ export function ChatThread({
   const [loading, setLoading] = useState(true);
   const scrollerRef = useRef<HTMLDivElement>(null);
 
-  // Load messaggi (estratto in callback per riusare anche su tab-back)
+  // Ref di "thread corrente": se cambia tra fetch e setState, scarta i dati
+  // (evita flash dei messaggi del thread precedente).
+  const currentThreadRef = useRef(threadId);
+  useEffect(() => {
+    currentThreadRef.current = threadId;
+  }, [threadId]);
+
+  // Load messaggi (estratto in callback per riusare anche su tab-back).
   const loadMessages = useCallback(async () => {
+    const targetThread = threadId;
     const msgsRes = await withTimeout(
       supabase
         .from("chat_messages")
         .select("id,thread_id,sender_id,body,created_at")
-        .eq("thread_id", threadId)
+        .eq("thread_id", targetThread)
         .order("created_at"),
       5000,
       { data: [] as Message[], error: null },
       "thread.messages"
     );
+    // Se nel frattempo l'utente è passato a un altro thread, scarta.
+    if (currentThreadRef.current !== targetThread) return;
+
     setMessages((msgsRes.data as Message[]) ?? []);
     setLoading(false);
 
@@ -93,15 +104,19 @@ export function ChatThread({
     }
   }, [threadId, meId, refreshNotifications]);
 
+  // Initial load: mostra spinner solo al primo mount/cambio thread.
   useEffect(() => {
     setLoading(true);
     loadMessages();
   }, [loadMessages]);
 
-  // Quando l'utente torna sul tab dopo che era in background, ricarica i
-  // messaggi (Realtime potrebbe aver perso eventi se la connessione si era
-  // chiusa per inattività del browser).
-  useTabVisibility(loadMessages);
+  // Su tab-back, refetch silente (NO setLoading): l'utente vedeva il flash
+  // del loading anche se aveva la chat già caricata.
+  useTabVisibility(
+    useCallback(() => {
+      loadMessages();
+    }, [loadMessages])
+  );
 
   // Realtime subscription
   useEffect(() => {

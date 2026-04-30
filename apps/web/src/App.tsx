@@ -46,6 +46,37 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * RequireRole — auth + check ruolo. Redirect alla home appropriata se l'utente
+ * non ha il ruolo richiesto. Evita che uno studente acceda a /coach/* via URL
+ * diretto vedendo l'UI coach (anche se RLS blocca i dati, l'UI vuota è
+ * confondente).
+ */
+function RequireRole({
+  children,
+  roles,
+}: {
+  children: React.ReactNode;
+  roles: Array<"student" | "coach" | "founder">;
+}) {
+  const { session, profile, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-ink text-paper flex items-center justify-center">
+        <div className="text-smoke-2 font-mono text-sm">Caricamento…</div>
+      </div>
+    );
+  }
+  if (!session) return <Navigate to="/login" replace />;
+  // Profile non ancora caricato — il fallback Home gestisce con timeout
+  if (!profile) return <Navigate to="/" replace />;
+  if (!roles.includes(profile.role)) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+}
+
+/**
  * RoleGate — sceglie l'home a seconda del ruolo:
  *  - coach / founder → vista nativa TSX (Preview / sidebar)
  *  - student         → iframe del prototipo (finché non portiamo le student views)
@@ -122,25 +153,25 @@ export default function App() {
           <Route
             path="/coach/*"
             element={
-              <RequireAuth>
+              <RequireRole roles={["coach", "founder"]}>
                 <Preview />
-              </RequireAuth>
+              </RequireRole>
             }
           />
           <Route
             path="/student/*"
             element={
-              <RequireAuth>
+              <RequireRole roles={["student"]}>
                 <Student />
-              </RequireAuth>
+              </RequireRole>
             }
           />
           <Route
             path="/preview/*"
             element={
-              <RequireAuth>
+              <RequireRole roles={["coach", "founder"]}>
                 <Preview />
-              </RequireAuth>
+              </RequireRole>
             }
           />
           <Route
