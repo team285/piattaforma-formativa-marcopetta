@@ -60,8 +60,10 @@ export function MPToastHost() {
       {toasts.map((t) => {
         const palette = PALETTE[t.tone];
         return (
-          <div
+          <button
             key={t.id}
+            onClick={() => setToasts((prev) => prev.filter((x) => x.id !== t.id))}
+            aria-label="Chiudi notifica"
             style={{
               background: palette.bg,
               color: palette.fg,
@@ -79,11 +81,15 @@ export function MPToastHost() {
               gap: 10,
               boxShadow: "0 10px 32px rgba(0,0,0,0.4)",
               animation: "mpToastIn 0.22s ease-out",
+              border: "none",
+              cursor: "pointer",
+              pointerEvents: "auto",
+              textAlign: "left",
             }}
           >
             <Icon name={palette.icon} size={14} />
             <span>{t.message}</span>
-          </div>
+          </button>
         );
       })}
       <style>{`@keyframes mpToastIn { from { opacity:0; transform: translateY(8px);} to { opacity:1; transform:none;} }`}</style>

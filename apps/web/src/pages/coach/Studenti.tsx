@@ -11,7 +11,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
-import { useBodyScrollLock, usePageTitle } from "../../lib/hooks";
+import { formatRelativeTime, useBodyScrollLock, usePageTitle } from "../../lib/hooks";
 import { Avatar, EmberButton, Icon, toast } from "../../components/ui";
 
 interface StudentRow {
@@ -294,9 +294,7 @@ export function CoachStudenti() {
                     </div>
                     <div className="font-mono text-[10px] uppercase tracking-wider text-smoke mt-1">
                       {s.level}
-                      {s.last_active_at && (
-                        <> · {new Date(s.last_active_at).toLocaleDateString("it-IT")}</>
-                      )}
+                      {s.last_active_at && <> · attivo {formatRelativeTime(s.last_active_at)}</>}
                     </div>
                   </div>
                 </div>

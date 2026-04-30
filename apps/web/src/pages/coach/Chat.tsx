@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useAuth } from "../../lib/auth";
-import { usePageTitle } from "../../lib/hooks";
+import { formatRelativeTime, usePageTitle } from "../../lib/hooks";
 import { Avatar } from "../../components/ui";
 import { ChatThread } from "../../components/chat/ChatThread";
 
@@ -197,10 +197,7 @@ export function CoachChat() {
                     <div className="font-display text-[16px] truncate">{t.student_name}</div>
                     {t.last_message_at && (
                       <div className="font-mono text-[10px] text-smoke flex-shrink-0">
-                        {new Date(t.last_message_at).toLocaleDateString("it-IT", {
-                          day: "numeric",
-                          month: "short",
-                        })}
+                        {formatRelativeTime(t.last_message_at)}
                       </div>
                     )}
                   </div>

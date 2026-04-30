@@ -1,8 +1,26 @@
 /**
- * Hook utility riusabili per UX comune (scroll lock, page title, visibility).
+ * Hook utility riusabili per UX comune (scroll lock, page title, visibility,
+ * date formatting).
  */
 
 import { useEffect } from "react";
+
+/**
+ * formatRelativeTime — "ora", "5 min", "2h", "ieri", "15 nov".
+ * Tipo WhatsApp / iMessage.
+ */
+export function formatRelativeTime(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "";
+  const diffSec = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (diffSec < 60) return "ora";
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)} min`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h`;
+  if (diffSec < 86400 * 2) return "ieri";
+  if (diffSec < 86400 * 7) return `${Math.floor(diffSec / 86400)}g`;
+  return d.toLocaleDateString("it-IT", { day: "numeric", month: "short" });
+}
 
 /**
  * useBodyScrollLock — blocca lo scroll del body mentre il drawer/modal è aperto.

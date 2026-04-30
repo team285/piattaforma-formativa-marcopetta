@@ -139,12 +139,28 @@ export function ChatThread({
     };
   }, [threadId, meId]);
 
-  // Auto-scroll a bottom
+  // Auto-scroll a bottom — logica intelligente:
+  // - Se l'ultimo messaggio è MIO, scroll sempre in fondo (ho appena inviato)
+  // - Se è del PEER, scroll solo se l'utente era già vicino al fondo
+  //   (tolleranza 80px). Cosi' non ruba lo scroll mentre l'utente legge
+  //   messaggi vecchi.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || messages.length === 0) return;
+    const lastMsg = messages[messages.length - 1];
+    const isMine = lastMsg.sender_id === meId;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    if (isMine || distanceFromBottom < 80) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [messages.length, messages, meId]);
+
+  // Quando il thread cambia, vai sempre in fondo (è una nuova conversazione)
   useEffect(() => {
     if (scrollerRef.current) {
       scrollerRef.current.scrollTop = scrollerRef.current.scrollHeight;
     }
-  }, [messages.length]);
+  }, [threadId]);
 
   const sendMessage = async () => {
     const text = draft.trim();
