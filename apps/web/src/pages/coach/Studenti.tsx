@@ -387,6 +387,7 @@ function InviteStudentDrawer({
   const [tempPwd] = useState(generateTempPassword);
   const [submitting, setSubmitting] = useState(false);
   const [created, setCreated] = useState<{ email: string; password: string } | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState(false);
 
   const toggleGenre = (g: string) => {
     setGenres((cur) => (cur.includes(g) ? cur.filter((x) => x !== g) : [...cur, g]));
@@ -444,14 +445,23 @@ function InviteStudentDrawer({
   const copyPassword = () => {
     if (!created) return;
     try {
-      navigator.clipboard.writeText(created.password);
-      toast("Password copiata", "ok");
+      navigator.clipboard.writeText(`${created.email}\n${created.password}`);
+      setPasswordCopied(true);
+      toast("Email + password copiate negli appunti", "ok");
     } catch {
-      toast("Selezionala a mano", "info");
+      toast("Selezionali a mano", "info");
     }
   };
 
   const close = () => {
+    if (created && !passwordCopied) {
+      // Sicurezza: la password generata non è recuperabile dopo questa
+      // chiusura. Forza Marco a confermare di averla copiata/comunicata.
+      const confirmed = window.confirm(
+        "Non hai ancora copiato la password. Una volta chiuso questo drawer, la password non sarà più recuperabile (Marco dovrà rigenerarla).\n\nChiudi comunque?"
+      );
+      if (!confirmed) return;
+    }
     if (created) onCreated();
     else onClose();
   };

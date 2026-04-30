@@ -81,6 +81,7 @@ export function StudentFeedback() {
   const [activeIdx, setActiveIdx] = useState(0);
   const [loading, setLoading] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const videoPathRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!profile?.id) return;
@@ -152,6 +153,7 @@ export function StudentFeedback() {
           .createSignedUrl(videoPath, 3600);
         if (!cancelled && urlRes.data?.signedUrl) {
           setVideoUrl(urlRes.data.signedUrl);
+          videoPathRef.current = videoPath;
         }
       }
 
@@ -189,6 +191,31 @@ export function StudentFeedback() {
       cancelled = true;
     };
   }, [profile?.id, requestedSub]);
+
+  // Refresh signed URL ogni 50 minuti (TTL 1h) preservando playback position.
+  useEffect(() => {
+    if (!videoPathRef.current) return;
+    const refreshUrl = async () => {
+      const path = videoPathRef.current;
+      if (!path) return;
+      const { data } = await supabase.storage
+        .from("submission-videos")
+        .createSignedUrl(path, 3600);
+      if (data?.signedUrl) {
+        const t = videoRef.current?.currentTime ?? 0;
+        const wasPlaying = videoRef.current && !videoRef.current.paused;
+        setVideoUrl(data.signedUrl);
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = t;
+            if (wasPlaying) videoRef.current.play().catch(() => {});
+          }
+        }, 100);
+      }
+    };
+    const intervalId = window.setInterval(refreshUrl, 50 * 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [videoUrl]);
 
   const seekTo = (seconds: number, idx: number) => {
     setActiveIdx(idx);

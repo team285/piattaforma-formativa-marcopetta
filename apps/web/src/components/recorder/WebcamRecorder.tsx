@@ -13,6 +13,13 @@ import { Icon } from "../ui";
 
 type RecordState = "idle" | "requesting" | "recording" | "preview" | "denied";
 type Mode = "record" | "upload";
+type FacingMode = "user" | "environment";
+
+// Detect mobile per default + bottone switch camera
+function isMobile(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+}
 
 export type SubmissionSource = "webcam" | "upload";
 
@@ -36,6 +43,8 @@ export function WebcamRecorder({ onSubmit, uploading = false }: WebcamRecorderPr
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadFileSize, setUploadFileSize] = useState<number | null>(null);
+  const [facing, setFacing] = useState<FacingMode>("user");
+  const mobile = isMobile();
 
   const blobRef = useRef<Blob | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -86,7 +95,7 @@ export function WebcamRecorder({ onSubmit, uploading = false }: WebcamRecorderPr
     setState("requesting");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "user" },
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: facing },
         audio: true,
       });
       streamRef.current = stream;
@@ -280,6 +289,14 @@ export function WebcamRecorder({ onSubmit, uploading = false }: WebcamRecorderPr
                   audio stereo
                 </span>
               </div>
+              {mobile && (
+                <button
+                  onClick={() => setFacing((f) => (f === "user" ? "environment" : "user"))}
+                  className="mt-3 h-7 px-3 rounded-[2px] border border-line-dark text-[10px] font-mono uppercase tracking-wider text-[#9A9AA2] hover:text-paper hover:border-[#4A3A32] transition"
+                >
+                  {facing === "user" ? "fotocamera frontale →" : "fotocamera posteriore →"}
+                </button>
+              )}
             </div>
           </>
         )}

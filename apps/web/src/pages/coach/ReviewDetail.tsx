@@ -93,6 +93,7 @@ export function CoachReviewDetail() {
   const [info, setInfo] = useState<SubmissionInfo | null>(null);
   usePageTitle(info ? `Review: ${info.student_name}` : "Review");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const videoPathRef = useRef<string | null>(null);
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [feedbackId, setFeedbackId] = useState<string | null>(null);
   const feedbackIdRef = useRef<string | null>(null);
@@ -218,6 +219,7 @@ export function CoachReviewDetail() {
 
       if (signedRes.data?.signedUrl) {
         setVideoUrl(signedRes.data.signedUrl);
+        videoPathRef.current = sub.video_storage_path;
       }
 
       if (fb) {
@@ -269,6 +271,35 @@ export function CoachReviewDetail() {
       cancelled = true;
     };
   }, [submissionId]);
+
+  // Refresh signed URL ogni 50 minuti (TTL 1h). Se Marco lascia la review
+  // aperta a lungo (correzione approfondita), il video continua a funzionare
+  // senza dover refreshare la pagina.
+  useEffect(() => {
+    if (!videoPathRef.current) return;
+    const refreshUrl = async () => {
+      const path = videoPathRef.current;
+      if (!path) return;
+      const { data } = await supabase.storage
+        .from("submission-videos")
+        .createSignedUrl(path, 3600);
+      if (data?.signedUrl) {
+        // Salva il currentTime per non perdere la posizione
+        const t = videoRef.current?.currentTime ?? 0;
+        const wasPlaying = videoRef.current && !videoRef.current.paused;
+        setVideoUrl(data.signedUrl);
+        // Aspetta il prossimo render per ripristinare lo stato del player
+        setTimeout(() => {
+          if (videoRef.current) {
+            videoRef.current.currentTime = t;
+            if (wasPlaying) videoRef.current.play().catch(() => {});
+          }
+        }, 100);
+      }
+    };
+    const intervalId = window.setInterval(refreshUrl, 50 * 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [videoUrl]);
 
   const ensureFeedback = (): Promise<string | null> =>
     runSerial(async () => {

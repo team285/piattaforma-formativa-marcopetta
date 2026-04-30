@@ -15,7 +15,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase, withTimeout } from "../../lib/supabase";
 import { useNotifications } from "../../lib/notifications";
 import { useTabVisibility } from "../../lib/hooks";
-import { Avatar, Icon } from "../ui";
+import { Avatar, Icon, toast } from "../ui";
 
 interface Message {
   id: string;
@@ -158,6 +158,7 @@ export function ChatThread({
     setSending(false);
     if (error) {
       console.warn("[chat] send error:", error);
+      toast(`Messaggio non inviato: ${error.message}`, "warn");
       return;
     }
     if (data) {

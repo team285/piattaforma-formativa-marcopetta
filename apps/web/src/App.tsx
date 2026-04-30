@@ -1,6 +1,23 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "./lib/auth";
 import { NotificationsProvider } from "./lib/notifications";
+
+/**
+ * ScrollToTop — al cambio di pathname, riporta lo scroll a 0.
+ * React Router non lo fa di default e l'utente arriva su una pagina nuova
+ * con lo scroll della precedente, sembra un bug.
+ *
+ * Eccezione: se l'URL ha un hash (#anchor) il browser lo gestisce nativamente.
+ */
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) return;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [pathname, hash]);
+  return null;
+}
 import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
@@ -82,6 +99,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <NotificationsProvider>
+        <ScrollToTop />
         <Routes>
           <Route
             path="/login"
