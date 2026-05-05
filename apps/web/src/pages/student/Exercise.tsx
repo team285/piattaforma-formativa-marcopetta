@@ -210,20 +210,40 @@ export function StudentExercise() {
                 onSubmit={async (blob, durationSeconds, source) => {
                   if (!profile?.id || !active) return;
                   setUploading(true);
-                  try {
-                    // Calcola take_number progressivo per questo esercizio
-                    const { count } = await supabase
-                      .from("submissions")
-                      .select("*", { count: "exact", head: true })
-                      .eq("exercise_id", active.id);
-                    const takeNumber = (count ?? 0) + 1;
 
-                    // Inferisci estensione dal mime type o dal nome file (per upload)
+                  // Helper: race una promise con timeout. Se la query/upload
+                  // non risponde, abortiamo invece di bloccare il bottone
+                  // a tempo indefinito.
+                  const withDeadline = async <T,>(
+                    p: PromiseLike<T>,
+                    ms: number,
+                    label: string
+                  ): Promise<T> => {
+                    return await Promise.race([
+                      Promise.resolve(p),
+                      new Promise<T>((_, reject) =>
+                        setTimeout(() => reject(new Error(`${label} timeout dopo ${ms / 1000}s`)), ms)
+                      ),
+                    ]);
+                  };
+
+                  try {
+                    // 1. take_number progressivo (timeout 8s)
+                    const countRes = await withDeadline(
+                      supabase
+                        .from("submissions")
+                        .select("*", { count: "exact", head: true })
+                        .eq("exercise_id", active.id),
+                      8000,
+                      "Conteggio take precedenti"
+                    );
+                    const takeNumber = (countRes.count ?? 0) + 1;
+
+                    // 2. Inferisci estensione
                     const inferExt = (b: Blob): string => {
                       if (b.type.includes("mp4")) return "mp4";
                       if (b.type.includes("quicktime")) return "mov";
                       if (b.type.includes("webm")) return "webm";
-                      // Per File con name disponibile
                       if ("name" in b && typeof (b as File).name === "string") {
                         const m = (b as File).name.match(/\.([a-z0-9]+)$/i);
                         if (m) return m[1].toLowerCase();
@@ -233,46 +253,63 @@ export function StudentExercise() {
                     const ext = inferExt(blob);
                     const path = `${profile.id}/${active.id}/take_${takeNumber}.${ext}`;
 
-                    const uploadRes = await supabase.storage
-                      .from("submission-videos")
-                      .upload(path, blob, {
-                        contentType: blob.type || "video/webm",
-                        upsert: false,
-                      });
+                    // 3. Upload Storage (timeout 60s — file può essere grande)
+                    const uploadRes = await withDeadline(
+                      supabase.storage
+                        .from("submission-videos")
+                        .upload(path, blob, {
+                          contentType: blob.type || "video/webm",
+                          upsert: false,
+                        }),
+                      60000,
+                      "Upload video"
+                    );
                     if (uploadRes.error) {
                       toast(`Upload fallito: ${uploadRes.error.message}`, "warn");
                       setUploading(false);
                       return;
                     }
 
-                    // Insert submission
-                    const insertRes = await supabase.from("submissions").insert({
-                      exercise_id: active.id,
-                      student_id: profile.id,
-                      take_number: takeNumber,
-                      video_storage_path: path,
-                      duration_seconds: durationSeconds,
-                      size_bytes: blob.size,
-                      source,
-                    });
+                    // 4. Insert submission (timeout 10s)
+                    const insertRes = await withDeadline(
+                      supabase.from("submissions").insert({
+                        exercise_id: active.id,
+                        student_id: profile.id,
+                        take_number: takeNumber,
+                        video_storage_path: path,
+                        duration_seconds: durationSeconds,
+                        size_bytes: blob.size,
+                        source,
+                      }),
+                      10000,
+                      "Salvataggio submission"
+                    );
                     if (insertRes.error) {
                       toast(`Salvataggio fallito: ${insertRes.error.message}`, "warn");
                       setUploading(false);
                       return;
                     }
 
-                    // Aggiorna status esercizio
-                    await supabase
-                      .from("exercises")
-                      .update({ status: "submitted" })
-                      .eq("id", active.id);
+                    // 5. Update status esercizio (timeout 8s, non bloccante)
+                    await withDeadline(
+                      supabase
+                        .from("exercises")
+                        .update({ status: "submitted" })
+                        .eq("id", active.id),
+                      8000,
+                      "Aggiornamento stato"
+                    ).catch((e) => {
+                      // Non blocchiamo il flow: la submission è già salvata
+                      console.warn("[exercise] update status fallito:", e);
+                    });
 
                     toast("Take inviato a Marco", "ok");
                     setUploading(false);
                     setTimeout(() => navigate("/student/home"), 600);
                   } catch (e) {
+                    const msg = e instanceof Error ? e.message : "errore sconosciuto";
                     console.warn("[exercise] upload error:", e);
-                    toast("Errore di rete durante l'upload", "warn");
+                    toast(`Errore: ${msg}. Riprova o ricarica la pagina.`, "warn");
                     setUploading(false);
                   }
                 }}
