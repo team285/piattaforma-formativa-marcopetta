@@ -239,8 +239,36 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       );
     }
 
-    channel.subscribe();
+    let cancelled = false;
+    let pollFallback: number | null = null;
+
+    // Subscribe con gestione errori graceful: se il channel fallisce
+    // (publication mancante, websocket bloccato da rete/extension), NON
+    // facciamo retry infinito. Invece attiviamo un poll periodico dei
+    // counter come fallback (refresh ogni 60s). L'app rimane funzionale
+    // ma i toast realtime non arrivano — l'utente vede comunque le
+    // notifiche al refresh manuale o quando torna sulla pagina.
+    channel.subscribe((status) => {
+      if (cancelled) return;
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        // Smonta channel per evitare retry websocket che intasano la
+        // console e rallentano altre query supabase.
+        supabase.removeChannel(channel);
+        if (!pollFallback) {
+          console.warn(
+            "[notifications] Realtime non disponibile — fallback a poll ogni 60s. " +
+              "Causa probabile: publication mancante (migration 0022), websocket bloccato (extension/firewall) o rete."
+          );
+          pollFallback = window.setInterval(() => {
+            if (!cancelled) refresh();
+          }, 60_000);
+        }
+      }
+    });
+
     return () => {
+      cancelled = true;
+      if (pollFallback) window.clearInterval(pollFallback);
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

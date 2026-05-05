@@ -445,7 +445,9 @@ function AssignExerciseDrawer({
       return;
     }
     setSubmitting(true);
-    const { error } = await supabase.from("exercises").insert({
+    // Timeout esplicito 15s per evitare che il bottone resti bloccato
+    // se il client supabase è impallato (es. retry websocket).
+    const insertPromise = supabase.from("exercises").insert({
       student_id: studentId,
       assigned_by_coach_id: coachId,
       title: title.trim(),
@@ -454,6 +456,18 @@ function AssignExerciseDrawer({
       due_date: dueDate || null,
       status: "assigned",
     });
+    const timeoutPromise = new Promise<{ error: { message: string } }>((resolve) =>
+      setTimeout(
+        () =>
+          resolve({
+            error: { message: "Timeout: la richiesta non ha risposto in 15s. Riprova o ricarica la pagina." },
+          }),
+        15000
+      )
+    );
+    const { error } = (await Promise.race([insertPromise, timeoutPromise])) as {
+      error: { message: string } | null;
+    };
     setSubmitting(false);
     if (error) {
       toast(`Errore: ${error.message}`, "warn");

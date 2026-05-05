@@ -118,8 +118,11 @@ export function ChatThread({
     }, [loadMessages])
   );
 
-  // Realtime subscription
+  // Realtime subscription con fallback poll se realtime non disponibile.
   useEffect(() => {
+    let cancelled = false;
+    let pollFallback: number | null = null;
+
     const channel = supabase
       .channel(`chat:${threadId}`)
       .on(
@@ -133,11 +136,9 @@ export function ChatThread({
         (payload) => {
           const newMsg = payload.new as Message;
           setMessages((cur) => {
-            // Skip duplicati (potremmo averlo già aggiunto otticamente dopo send)
             if (cur.some((m) => m.id === newMsg.id)) return cur;
             return [...cur, newMsg];
           });
-          // Se il messaggio non è mio, mark as read + aggiorna sidebar counter
           if (newMsg.sender_id !== meId) {
             supabase
               .from("chat_messages")
@@ -147,9 +148,23 @@ export function ChatThread({
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (cancelled) return;
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          supabase.removeChannel(channel);
+          if (!pollFallback) {
+            // Fallback: poll messaggi ogni 8s. Niente realtime ma chat
+            // resta funzionale.
+            pollFallback = window.setInterval(() => {
+              if (!cancelled) loadMessages();
+            }, 8_000);
+          }
+        }
+      });
 
     return () => {
+      cancelled = true;
+      if (pollFallback) window.clearInterval(pollFallback);
       supabase.removeChannel(channel);
     };
   }, [threadId, meId]);
