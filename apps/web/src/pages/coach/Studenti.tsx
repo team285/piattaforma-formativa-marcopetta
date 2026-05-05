@@ -419,7 +419,17 @@ function InviteStudentDrawer({
       return;
     }
     setSubmitting(true);
-    const { data, error } = await supabase.rpc("admin_create_student", {
+    // Timeout esplicito: se il client supabase è impallato (es. retry
+    // websocket), almeno l'utente vede un errore decente invece del bottone
+    // bloccato a tempo indefinito.
+    const timeoutPromise = new Promise<{ data: null; error: { message: string } }>(
+      (resolve) =>
+        setTimeout(
+          () => resolve({ data: null, error: { message: "Timeout: la richiesta non ha risposto in 15s. Riprova o ricarica la pagina." } }),
+          15000
+        )
+    );
+    const rpcPromise = supabase.rpc("admin_create_student", {
       p_email: email.trim().toLowerCase(),
       p_full_name: `${nome.trim()} ${cognome.trim()}`,
       p_password: tempPwd,
@@ -432,6 +442,10 @@ function InviteStudentDrawer({
       p_genres: genres,
       p_notes: notes.trim() || null,
     });
+    const { data, error } = (await Promise.race([rpcPromise, timeoutPromise])) as {
+      data: unknown;
+      error: { message: string } | null;
+    };
     setSubmitting(false);
     if (error) {
       toast(`Errore: ${error.message}`, "warn");
